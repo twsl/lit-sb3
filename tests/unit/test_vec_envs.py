@@ -14,9 +14,9 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from lit_sb3.common.monitor import Monitor
 from lit_sb3.utils.env_util import make_vec_env
 from lit_sb3.vec_env import DummyVecEnv, SubprocVecEnv, VecCheckNan, VecFrameStack
+from lit_sb3.wrappers.monitor import Monitor
 
 N_ENVS = 3
 VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]

@@ -10,7 +10,7 @@ import uuid
 import gymnasium as gym
 import pandas
 
-from lit_sb3.common.monitor import Monitor, get_monitor_files, load_results
+from lit_sb3.wrappers.monitor import Monitor, get_monitor_files, load_results
 
 
 def test_monitor(tmp_path):
