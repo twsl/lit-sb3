@@ -115,8 +115,7 @@ class FormatUnsupportedError(NotImplementedError):
 
 
 class KVWriter:
-    """Key Value writer.
-    """
+    """Key Value writer."""
 
     def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         """Write a dictionary to file.
@@ -129,14 +128,12 @@ class KVWriter:
         raise NotImplementedError
 
     def close(self) -> None:
-        """Close owned resources.
-        """
+        """Close owned resources."""
         raise NotImplementedError
 
 
 class SeqWriter:
-    """sequence writer.
-    """
+    """sequence writer."""
 
     def write_sequence(self, sequence: list[str]) -> None:
         """write_sequence an array to file.
@@ -165,7 +162,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
     def __init__(self, filename_or_file: str | TextIO, max_length: int = 36):
         self.max_length = max_length
-        if isinstance(filename_or_file, str):
+        if isinstance(filename_or_file, (str, Path)):
             self.file = Path(filename_or_file).open("w")  # noqa: SIM115
             self.own_file = True
         elif isinstance(filename_or_file, TextIOBase) or hasattr(filename_or_file, "write"):
@@ -257,8 +254,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         self.file.flush()
 
     def close(self) -> None:
-        """Closes the file.
-        """
+        """Closes the file."""
         if self.own_file:
             self.file.close()
 
@@ -320,8 +316,7 @@ class JSONOutputFormat(KVWriter):
         self.file.flush()
 
     def close(self) -> None:
-        """Closes the file.
-        """
+        """Closes the file."""
         self.file.close()
 
 
@@ -386,8 +381,7 @@ class CSVOutputFormat(KVWriter):
         self.file.flush()
 
     def close(self) -> None:
-        """Closes the file.
-        """
+        """Closes the file."""
         self.file.close()
 
 
@@ -442,8 +436,7 @@ class TensorBoardOutputFormat(KVWriter):
         self.writer.flush()
 
     def close(self) -> None:
-        """Closes the file.
-        """
+        """Closes the file."""
         if self.writer:
             self.writer.close()
             self._is_closed = True
@@ -498,8 +491,7 @@ class Logger:
 
     @staticmethod
     def to_tuple(string_or_tuple: str | tuple[str, ...] | None) -> tuple[str, ...]:
-        """Helper function to convert str to tuple of str.
-        """
+        """Helper function to convert str to tuple of str."""
         if string_or_tuple is None:
             return ("",)
         if isinstance(string_or_tuple, tuple):
@@ -520,9 +512,7 @@ class Logger:
         self.name_to_value[key] = value
         self.name_to_excluded[key] = self.to_tuple(exclude)
 
-    def record_mean(
-        self, key: str, value: float | None, exclude: str | tuple[str, ...] | None = None
-    ) -> None:
+    def record_mean(self, key: str, value: float | None, exclude: str | tuple[str, ...] | None = None) -> None:
         """The same as record(), but if called many times, values averaged.
 
         Args:
@@ -538,8 +528,7 @@ class Logger:
         self.name_to_excluded[key] = self.to_tuple(exclude)
 
     def dump(self, step: int = 0) -> None:
-        """Write all of the diagnostics from the current iteration.
-        """
+        """Write all of the diagnostics from the current iteration."""
         if self.level == DISABLED:
             return
         for _format in self.output_formats:
@@ -630,8 +619,7 @@ class Logger:
         return self.dir
 
     def close(self) -> None:
-        """Closes the file.
-        """
+        """Closes the file."""
         for _format in self.output_formats:
             _format.close()
 

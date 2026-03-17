@@ -96,7 +96,8 @@ class DummyVecEnv(VecEnv):
     def get_images(self) -> Sequence[np.ndarray | None]:
         if self.render_mode != "rgb_array":
             warnings.warn(
-                f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images.", stacklevel=2
+                f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images.",
+                stacklevel=2,
             )
             return [None for _ in self.envs]
         return [env.render() for env in self.envs]  # type: ignore[misc]
@@ -141,7 +142,7 @@ class DummyVecEnv(VecEnv):
         """Check if worker environments are wrapped with a given wrapper."""
         target_envs = self._get_target_envs(indices)
         # Import here to avoid a circular import
-        from lit_sb3.common import env_util
+        from lit_sb3.utils import env_util
 
         return [env_util.is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 

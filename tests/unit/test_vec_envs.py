@@ -68,7 +68,16 @@ class CustomGymEnv(gym.Env):
 @pytest.mark.parametrize("vec_env_cls", [None, SubprocVecEnv])
 @pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.TimeLimit])
 def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
-    env = make_vec_env(env_id, n_envs, vec_env_cls=vec_env_cls, wrapper_class=wrapper_class, monitor_dir=None, seed=0)
+    wrapper_kwargs = {"max_episode_steps": 500} if wrapper_class is gym.wrappers.TimeLimit else {}
+    env = make_vec_env(
+        env_id,
+        n_envs,
+        vec_env_cls=vec_env_cls,
+        wrapper_class=wrapper_class,
+        wrapper_kwargs=wrapper_kwargs,
+        monitor_dir=None,
+        seed=0,
+    )
     assert env.num_envs == n_envs
 
     if vec_env_cls is None:
@@ -145,10 +154,7 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
 
     if vec_env_wrapper is not None:
-        if vec_env_wrapper == VecFrameStack:
-            vec_env = vec_env_wrapper(vec_env, n_stack=2)
-        else:
-            vec_env = vec_env_wrapper(vec_env)
+        vec_env = vec_env_wrapper(vec_env, n_stack=2) if vec_env_wrapper == VecFrameStack else vec_env_wrapper(vec_env)
 
     vec_env.seed(0)
     vec_env.render(mode="rgb_array")

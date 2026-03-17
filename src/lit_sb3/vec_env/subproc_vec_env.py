@@ -26,7 +26,12 @@ def _worker(  # noqa: C901
     from lit_sb3.utils.env_util import is_wrapped
 
     parent_remote.close()
-    env = _patch_env(env_fn_wrapper.var())
+    try:
+        env = _patch_env(env_fn_wrapper.var())
+    except Exception as e:
+        remote.send(e)
+        remote.close()
+        return
     reset_info: dict[str, Any] | None = {}
     while True:
         try:
@@ -125,7 +130,12 @@ class SubprocVecEnv(VecEnv):
             work_remote.close()
 
         self.remotes[0].send(("get_spaces", None))
-        observation_space, action_space = self.remotes[0].recv()
+        result = self.remotes[0].recv()
+        if isinstance(result, Exception):
+            for process in self.processes:
+                process.terminate()
+            raise RuntimeError(f"Error when creating environment in subprocess: {result}") from result
+        observation_space, action_space = result
 
         super().__init__(len(env_fns), observation_space, action_space)
 

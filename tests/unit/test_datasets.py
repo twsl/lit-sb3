@@ -32,8 +32,8 @@ def test_replay_buffer_dataset_in_dataloader():
 def test_rollout_dataset_yields_batches():
     """RolloutDataset should yield batches from the rollout buffer."""
     import gymnasium as gym
-    from lit_sb3.common.buffers import RolloutBuffer
 
+    from lit_sb3.buffers import RolloutBuffer
     from lit_sb3.data.rollout import RolloutDataset
 
     env = gym.make("CartPole-v1")
