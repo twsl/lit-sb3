@@ -29,6 +29,11 @@ type PyTorchObs = torch.Tensor | TensorDict
 Schedule = Callable[[float], float]
 
 
+class RNNStates(NamedTuple):
+    pi: tuple[torch.Tensor, ...]
+    vf: tuple[torch.Tensor, ...]
+
+
 class RolloutBufferSamples(NamedTuple):
     observations: torch.Tensor
     actions: torch.Tensor

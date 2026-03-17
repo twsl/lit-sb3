@@ -6,7 +6,7 @@ import gymnasium as gym
 import numpy as np
 
 from lit_sb3.algorithms.ppo_mask import MaskablePPO
-from lit_sb3.common.maskable.utils import get_action_masks, is_masking_supported
+from lit_sb3.utils.maskable import get_action_masks, is_masking_supported
 from lit_sb3.vec_env import DummyVecEnv, VecEnv, VecMonitor, is_vecenv_wrapped
 from lit_sb3.wrappers.monitor import Monitor
 

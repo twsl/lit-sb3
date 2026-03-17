@@ -10,8 +10,7 @@ from lit_sb3.algorithms.ppo_recurrent.policies import CnnLstmPolicy, MlpLstmPoli
 from lit_sb3.buffers import RolloutBuffer
 from lit_sb3.buffers.recurrent import RecurrentDictRolloutBuffer, RecurrentRolloutBuffer
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.recurrent.type_aliases import RNNStates
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.common.types import GymEnv, MaybeCallback, RNNStates, Schedule
 from lit_sb3.common.utils import FloatSchedule, explained_variance, obs_as_tensor
 from lit_sb3.policies import BasePolicy
 from lit_sb3.policies.recurrent import RecurrentActorCriticPolicy

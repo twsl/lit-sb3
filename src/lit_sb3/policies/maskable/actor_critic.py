@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from torch import nn
 
-from lit_sb3.common.maskable.distributions import MaskableDistribution, make_masked_proba_distribution
 from lit_sb3.common.types import PyTorchObs, Schedule
+from lit_sb3.distributions.maskable import MaskableDistribution, make_masked_proba_distribution
 from lit_sb3.modules import (
     BaseFeaturesExtractor,
     CombinedExtractor,

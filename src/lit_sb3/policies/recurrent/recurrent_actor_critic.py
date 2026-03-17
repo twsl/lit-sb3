@@ -5,8 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from lit_sb3.common.recurrent.type_aliases import RNNStates
-from lit_sb3.common.types import Schedule
+from lit_sb3.common.types import RNNStates, Schedule
 from lit_sb3.common.utils import zip_strict
 from lit_sb3.distributions import Distribution
 from lit_sb3.modules import (

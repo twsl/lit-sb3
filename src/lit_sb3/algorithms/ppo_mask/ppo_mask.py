@@ -10,11 +10,11 @@ from lit_sb3.algorithms.ppo_mask.policies import CnnPolicy, MlpPolicy, MultiInpu
 from lit_sb3.buffers import RolloutBuffer
 from lit_sb3.buffers.maskable import MaskableDictRolloutBuffer, MaskableRolloutBuffer
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.maskable.utils import get_action_masks, is_masking_supported
 from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
 from lit_sb3.common.utils import FloatSchedule, explained_variance, obs_as_tensor
 from lit_sb3.policies import BasePolicy
 from lit_sb3.policies.maskable import MaskableActorCriticPolicy
+from lit_sb3.utils.maskable import get_action_masks, is_masking_supported
 from lit_sb3.vec_env import VecEnv
 
 SelfMaskablePPO = TypeVar("SelfMaskablePPO", bound="MaskablePPO")
