@@ -31,7 +31,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
     def __init__(
         self,
         env: gym.Env,
-        filename: str | None = None,
+        filename: str | Path | None = None,
         allow_early_resets: bool = True,
         reset_keywords: tuple[str, ...] = (),
         info_keywords: tuple[str, ...] = (),
@@ -160,15 +160,15 @@ class ResultsWriter:
 
     def __init__(
         self,
-        filename: str = "",
+        filename: str | Path = "",
         header: dict[str, float | str] | None = None,
         extra_keys: tuple[str, ...] = (),
         override_existing: bool = True,
     ) -> None:
         if header is None:
             header = {}
-        if not filename.endswith(Monitor.EXT):
-            filename = str(Path(filename) / Monitor.EXT) if Path(filename).is_dir() else filename + "." + Monitor.EXT
+        if not str(filename).endswith(Monitor.EXT):
+            filename = Path(filename) / Monitor.EXT if Path(filename).is_dir() else f"{filename}.{Monitor.EXT}"
         filename = os.path.realpath(filename)
         # Create (if any) missing filename directories
         Path(filename).parent.mkdir(parents=True, exist_ok=True)

@@ -14,7 +14,7 @@ import pandas
 from lit_sb3.wrappers.monitor import Monitor, get_monitor_files, load_results
 
 
-def test_monitor(tmp_path):
+def test_monitor(tmp_path: Path):
     """Test the Monitor wrapper records steps, rewards, and episode metadata."""
     env = gym.make("CartPole-v1")
     monitor_file = tmp_path / f"stable_baselines-test-{uuid.uuid4()}.monitor.csv"
@@ -51,7 +51,7 @@ def test_monitor(tmp_path):
     Path(monitor_file).unlink()
 
 
-def test_monitor_load_results(tmp_path):
+def test_monitor_load_results(tmp_path: Path):
     """Test load_results on log files produced by the Monitor wrapper."""
     env1 = gym.make("CartPole-v1")
     monitor_file1 = tmp_path / f"stable_baselines-test-{uuid.uuid4()}.monitor.csv"
