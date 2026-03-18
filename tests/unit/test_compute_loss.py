@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import torch
 
-from lit_sb3.algorithms.ppo import PPO
+from lit_sb3.algorithms.ppo.ppo import PPO
 
 
 def _make_rollout_batch(
