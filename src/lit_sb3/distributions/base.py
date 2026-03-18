@@ -12,7 +12,7 @@ SelfDistribution = TypeVar("SelfDistribution", bound="Distribution")
 class Distribution(ABC):
     """Abstract base class for distributions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.distribution = None
 

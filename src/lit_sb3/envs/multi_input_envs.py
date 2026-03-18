@@ -42,7 +42,7 @@ class SimpleMultiObsEnv(gym.Env):
         random_start: bool = True,
         discrete_actions: bool = True,
         channel_last: bool = True,
-    ):
+    ) -> None:
         super().__init__()
 
         self.vector_size = 5

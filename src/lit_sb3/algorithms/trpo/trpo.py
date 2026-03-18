@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
+from lightning.pytorch.utilities.types import OptimizerLRScheduler
 import numpy as np
 import torch
 from torch import nn
@@ -64,7 +65,7 @@ class TRPO(OnPolicyAlgorithm):
         seed: int | None = None,
         device: torch.device | str = "auto",
         _init_setup_model: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             policy,
             env,
@@ -165,7 +166,7 @@ class TRPO(OnPolicyAlgorithm):
     # Lightning hooks (manual optimization — actor uses CG, not autograd backward)
     # ------------------------------------------------------------------
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> OptimizerLRScheduler:
         return self.policy.optimizer
 
     def on_train_epoch_start(self) -> None:

@@ -18,7 +18,7 @@ class DiagGaussianDistribution(Distribution):
         action_dim: Dimension of the action space.
     """
 
-    def __init__(self, action_dim: int):
+    def __init__(self, action_dim: int) -> None:
         super().__init__()
         self.action_dim = action_dim
         self.mean_actions = None

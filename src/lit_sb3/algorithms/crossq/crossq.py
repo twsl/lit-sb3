@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 
 from gymnasium import spaces
+from lightning.pytorch.utilities.types import OptimizerLRScheduler
 import numpy as np
 import torch
 from torch.nn import functional as F  # noqa: N812
@@ -105,7 +106,7 @@ class CrossQ(OffPolicyAlgorithm):
         seed: int | None = None,
         device: torch.device | str = "auto",
         _init_setup_model: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             policy,
             env,
@@ -186,7 +187,7 @@ class CrossQ(OffPolicyAlgorithm):
     # Lightning hooks (manual optimization)
     # ------------------------------------------------------------------
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> OptimizerLRScheduler:
         optimizers = [self.actor.optimizer, self.critic.optimizer]
         if self.ent_coef_optimizer is not None:
             optimizers.append(self.ent_coef_optimizer)

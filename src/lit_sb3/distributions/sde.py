@@ -52,7 +52,7 @@ class StateDependentNoiseDistribution(Distribution):
         squash_output: bool = False,
         learn_features: bool = False,
         epsilon: float = 1e-6,
-    ):
+    ) -> None:
         super().__init__()
         self.action_dim = action_dim
         self.latent_sde_dim = None

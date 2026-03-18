@@ -73,7 +73,7 @@ class RecurrentMultiInputActorCriticPolicy(RecurrentActorCriticPolicy):
         shared_lstm: bool = False,
         enable_critic_lstm: bool = True,
         lstm_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

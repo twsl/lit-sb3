@@ -35,7 +35,7 @@ class BatchRenorm(torch.nn.Module):
         momentum: float = 0.01,
         affine: bool = True,
         warmup_steps: int = 100_000,
-    ):
+    ) -> None:
         super().__init__()
         # Running average mean and variance
         self.register_buffer("ra_mean", torch.zeros(num_features, dtype=torch.float))

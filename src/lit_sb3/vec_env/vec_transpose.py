@@ -19,7 +19,7 @@ class VecTransposeImage(VecEnvWrapper):
             which may result in unwanted behavior, see GH issue #671.
     """
 
-    def __init__(self, venv: VecEnv, skip: bool = False):
+    def __init__(self, venv: VecEnv, skip: bool = False) -> None:
         assert is_image_space(venv.observation_space) or isinstance(venv.observation_space, spaces.Dict), (
             "The observation space must be an image or dictionary observation space"
         )

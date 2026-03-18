@@ -61,7 +61,7 @@ class Actor(BasePolicy):
         use_expln: bool = False,
         clip_mean: float = 2.0,
         normalize_images: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -212,7 +212,7 @@ class Critic(BaseModel):
         n_quantiles: int = 25,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -297,7 +297,7 @@ class TQCPolicy(BasePolicy):
         n_quantiles: int = 25,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -486,7 +486,7 @@ class CnnPolicy(TQCPolicy):
         n_quantiles: int = 25,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -555,7 +555,7 @@ class MultiInputPolicy(TQCPolicy):
         n_quantiles: int = 25,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

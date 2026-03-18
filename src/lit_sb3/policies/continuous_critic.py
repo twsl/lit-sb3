@@ -79,7 +79,7 @@ class ContinuousCritic(BaseModel):
         normalize_images: bool = True,
         n_critics: int = 2,
         share_features_extractor: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

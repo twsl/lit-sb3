@@ -17,7 +17,7 @@ class ActionMasker(gym.Wrapper):
             or the name of such a method provided by the environment.
     """
 
-    def __init__(self, env: gym.Env, action_mask_fn: str | Callable[[gym.Env], np.ndarray]):
+    def __init__(self, env: gym.Env, action_mask_fn: str | Callable[[gym.Env], np.ndarray]) -> None:
         super().__init__(env)
 
         if isinstance(action_mask_fn, str):

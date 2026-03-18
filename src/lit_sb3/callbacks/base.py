@@ -30,7 +30,7 @@ class BaseCallback(L.Callback, ABC):
     # Type hint as string to avoid circular import
     model: "BaseAlgorithm"
 
-    def __init__(self, verbose: int = 0):
+    def __init__(self, verbose: int = 0) -> None:
         super().__init__()
         # Number of time the callback was called
         self.n_calls = 0  # type: int
@@ -182,7 +182,7 @@ class EventCallback(BaseCallback):
         verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
-    def __init__(self, callback: "BaseCallback | None" = None, verbose: int = 0):
+    def __init__(self, callback: "BaseCallback | None" = None, verbose: int = 0) -> None:
         super().__init__(verbose=verbose)
         self.callback = callback
         # Give access to the parent
@@ -225,7 +225,7 @@ class CallbackList(BaseCallback):
             sequentially.
     """
 
-    def __init__(self, callbacks: list[BaseCallback]):
+    def __init__(self, callbacks: list[BaseCallback]) -> None:
         super().__init__()
         assert isinstance(callbacks, list)
         self.callbacks = callbacks

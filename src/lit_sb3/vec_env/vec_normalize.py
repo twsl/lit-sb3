@@ -46,7 +46,7 @@ class VecNormalize(VecEnvWrapper):
         gamma: float = 0.99,
         epsilon: float = 1e-8,
         norm_obs_keys: list[str] | None = None,
-    ):
+    ) -> None:
         VecEnvWrapper.__init__(self, venv)
 
         self.norm_obs = norm_obs

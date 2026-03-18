@@ -12,7 +12,7 @@ class TanhBijector:
         epsilon: small value to avoid NaN due to numerical imprecision.
     """
 
-    def __init__(self, epsilon: float = 1e-6):
+    def __init__(self, epsilon: float = 1e-6) -> None:
         super().__init__()
         self.epsilon = epsilon
 

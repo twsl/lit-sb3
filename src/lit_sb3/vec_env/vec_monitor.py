@@ -29,7 +29,7 @@ class VecMonitor(VecEnvWrapper):
         venv: VecEnv,
         filename: str | None = None,
         info_keywords: tuple[str, ...] = (),
-    ):
+    ) -> None:
         # Avoid circular import
         from lit_sb3.wrappers.monitor import Monitor, ResultsWriter
 

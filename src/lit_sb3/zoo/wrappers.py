@@ -46,7 +46,7 @@ class TruncatedOnSuccessWrapper(gym.Wrapper):
         assert options is None, "Options not supported for now"
         return self.env.reset(seed=seed)
 
-    def step(self, action) -> GymStepReturn:
+    def step(self, action: Any) -> GymStepReturn:
         obs, reward, terminated, truncated, info = self.env.step(action)
         if info.get("is_success", False):
             self.current_successes += 1
@@ -57,7 +57,7 @@ class TruncatedOnSuccessWrapper(gym.Wrapper):
         reward = float(reward) + self.reward_offset
         return obs, reward, terminated, truncated, info
 
-    def compute_reward(self, achieved_goal, desired_goal, info):
+    def compute_reward(self, achieved_goal: Any, desired_goal: Any, info: dict[str, Any]) -> SupportsFloat:
         reward = self.env.compute_reward(achieved_goal, desired_goal, info)  # ty:ignore[unresolved-attribute]
         return reward + self.reward_offset
 
@@ -99,7 +99,7 @@ class ActionSmoothingWrapper(gym.Wrapper):
         assert options is None, "Options not supported for now"
         return self.env.reset(seed=seed)
 
-    def step(self, action) -> GymStepReturn:
+    def step(self, action: np.ndarray) -> GymStepReturn:
         if self.smoothed_action is None:
             self.smoothed_action = np.zeros_like(action)
         assert self.smoothed_action is not None
@@ -128,7 +128,7 @@ class DelayedRewardWrapper(gym.Wrapper):
         assert options is None, "Options not supported for now"
         return self.env.reset(seed=seed)
 
-    def step(self, action) -> GymStepReturn:
+    def step(self, action: Any) -> GymStepReturn:
         obs, reward, terminated, truncated, info = self.env.step(action)
 
         self.accumulated_reward += float(reward)
@@ -189,7 +189,7 @@ class HistoryWrapper(gym.Wrapper[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
         self.obs_history[..., -obs.shape[-1] :] = obs
         return self._create_obs_from_history(), info
 
-    def step(self, action) -> tuple[np.ndarray, SupportsFloat, bool, bool, dict]:
+    def step(self, action: np.ndarray) -> tuple[np.ndarray, SupportsFloat, bool, bool, dict]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         last_ax_size = obs.shape[-1]
 
@@ -257,7 +257,7 @@ class HistoryWrapperObsDict(gym.Wrapper):
 
         return obs_dict, info
 
-    def step(self, action) -> tuple[dict[str, np.ndarray], SupportsFloat, bool, bool, dict]:
+    def step(self, action: np.ndarray) -> tuple[dict[str, np.ndarray], SupportsFloat, bool, bool, dict]:
         obs_dict, reward, terminated, truncated, info = self.env.step(action)
         obs = obs_dict["observation"]
         last_ax_size = obs.shape[-1]
@@ -284,7 +284,7 @@ class FrameSkip(gym.Wrapper):
         super().__init__(env)
         self._skip = skip
 
-    def step(self, action) -> GymStepReturn:
+    def step(self, action: Any) -> GymStepReturn:
         """Step the environment, repeating action and summing reward.
 
         :param action: The action to repeat.

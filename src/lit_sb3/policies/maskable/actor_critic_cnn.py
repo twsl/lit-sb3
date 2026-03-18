@@ -47,7 +47,7 @@ class MaskableActorCriticCnnPolicy(MaskableActorCriticPolicy):
         normalize_images: bool = True,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

@@ -20,7 +20,7 @@ class MaskableMultiCategoricalDistribution(MaskableDistribution):
         action_dims: List of sizes of discrete action spaces
     """
 
-    def __init__(self, action_dims: list[int]):
+    def __init__(self, action_dims: list[int]) -> None:
         super().__init__()
         self.distributions: list[MaskableCategorical] = []
         self.action_dims = action_dims

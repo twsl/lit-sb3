@@ -49,12 +49,12 @@ class RecurrentRolloutBuffer(RolloutBuffer):
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
-    ):
+    ) -> None:
         self.hidden_state_shape = hidden_state_shape
         self.seq_start_indices, self.seq_end_indices = None, None
         super().__init__(buffer_size, observation_space, action_space, device, gae_lambda, gamma, n_envs)
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self.hidden_states_pi = np.zeros(self.hidden_state_shape, dtype=np.float32)
         self.cell_states_pi = np.zeros(self.hidden_state_shape, dtype=np.float32)

@@ -21,6 +21,7 @@ from typing import Any, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
+from lightning.pytorch.utilities.types import OptimizerLRScheduler
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -213,7 +214,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     # Lightning hooks — training loop
     # ------------------------------------------------------------------
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> OptimizerLRScheduler:
         """Subclasses must override this to return their optimizers."""
         raise NotImplementedError(f"{self.__class__.__name__} must implement `configure_optimizers`.")
 

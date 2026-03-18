@@ -51,7 +51,7 @@ class ReplayBuffer(BaseBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
-    ):
+    ) -> None:
         super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         # Adjust buffer size
@@ -159,7 +159,7 @@ class ReplayBuffer(BaseBuffer):
                 to normalize the observations/rewards when sampling
         """
         if not self.optimize_memory_usage:
-            return super().sample(batch_size=batch_size, env=env)
+            return super().sample(batch_size=batch_size, env=env)  # ty:ignore[invalid-return-type]
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:

@@ -41,7 +41,7 @@ class Actor(BasePolicy):
         features_dim: int,
         activation_fn: type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -125,7 +125,7 @@ class TD3Policy(BasePolicy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -291,7 +291,7 @@ class CnnPolicy(TD3Policy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -345,7 +345,7 @@ class MultiInputPolicy(TD3Policy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

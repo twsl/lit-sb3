@@ -40,7 +40,7 @@ class QuantileNetwork(BasePolicy):
         net_arch: list[int] | None = None,
         activation_fn: type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -129,7 +129,7 @@ class QRDQNPolicy(BasePolicy):
         normalize_images: bool = True,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -251,7 +251,7 @@ class CnnPolicy(QRDQNPolicy):
         normalize_images: bool = True,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -299,7 +299,7 @@ class MultiInputPolicy(QRDQNPolicy):
         normalize_images: bool = True,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

@@ -61,7 +61,7 @@ class HerReplayBuffer(DictReplayBuffer):
         n_sampled_goal: int = 4,
         goal_selection_strategy: GoalSelectionStrategy | str = "future",
         copy_info_dict: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             buffer_size,
             observation_space,

@@ -20,7 +20,7 @@ class MaskableCategoricalDistribution(MaskableDistribution):
         action_dim: Number of discrete actions
     """
 
-    def __init__(self, action_dim: int):
+    def __init__(self, action_dim: int) -> None:
         super().__init__()
         self.distribution: MaskableCategorical | None = None
         self.action_dim = action_dim

@@ -57,7 +57,7 @@ class MaskableDictRolloutBuffer(DictRolloutBuffer):
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
-    ):
+    ) -> None:
         super().__init__(buffer_size, observation_space, action_space, device, gae_lambda, gamma, n_envs=n_envs)
 
     def reset(self) -> None:

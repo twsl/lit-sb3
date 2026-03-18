@@ -3,6 +3,7 @@ from typing import Any, ClassVar, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
+from lightning.pytorch.utilities.types import OptimizerLRScheduler
 import numpy as np
 import torch
 from torch.nn import functional as F  # noqa: N812
@@ -107,7 +108,7 @@ class PPO(OnPolicyAlgorithm):
         seed: int | None = None,
         device: torch.device | str = "auto",
         _init_setup_model: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             policy,
             env,
@@ -191,7 +192,7 @@ class PPO(OnPolicyAlgorithm):
     # Lightning hooks
     # ------------------------------------------------------------------
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> OptimizerLRScheduler:
         """Return the policy optimizer."""
         return self.policy.optimizer
 

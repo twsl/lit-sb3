@@ -31,7 +31,7 @@ class ARSPolicy(BasePolicy):
         activation_fn: type[nn.Module] = nn.ReLU,
         with_bias: bool = True,
         squash_output: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -102,7 +102,7 @@ class ARSLinearPolicy(ARSPolicy):
         action_space: spaces.Space,
         with_bias: bool = False,
         squash_output: bool = False,
-    ):
+    ) -> None:
         super().__init__(observation_space, action_space, net_arch=[], with_bias=with_bias, squash_output=squash_output)
 
 

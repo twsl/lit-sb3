@@ -37,7 +37,7 @@ class NStepReplayBuffer(ReplayBuffer):
         gamma: Discount factor for future rewards
     """
 
-    def __init__(self, *args, n_steps: int = 3, gamma: float = 0.99, **kwargs):
+    def __init__(self, *args, n_steps: int = 3, gamma: float = 0.99, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.n_steps = n_steps
         self.gamma = gamma

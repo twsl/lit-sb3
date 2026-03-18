@@ -83,7 +83,7 @@ class RecurrentActorCriticPolicy(ActorCriticPolicy):
         shared_lstm: bool = False,
         enable_critic_lstm: bool = True,
         lstm_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.lstm_output_dim = lstm_hidden_size
         super().__init__(
             observation_space,

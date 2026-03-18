@@ -18,7 +18,7 @@ class BernoulliDistribution(Distribution):
         action_dims: Number of binary actions
     """
 
-    def __init__(self, action_dims: int):
+    def __init__(self, action_dims: int) -> None:
         super().__init__()
         self.action_dims = action_dims
 

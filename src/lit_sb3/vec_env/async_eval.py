@@ -109,7 +109,7 @@ class AsyncEval:
         train_policy: BasePolicy,
         start_method: str | None = None,
         n_eval_episodes: int = 1,
-    ):
+    ) -> None:
         self.waiting = False
         self.closed = False
         n_envs = len(envs_fn)

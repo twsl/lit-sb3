@@ -57,7 +57,7 @@ class EvalCallback(EventCallback):
         render: bool = False,
         verbose: int = 1,
         warn: bool = True,
-    ):
+    ) -> None:
         super().__init__(callback_after_eval, verbose=verbose)
 
         self.callback_on_new_best = callback_on_new_best

@@ -20,6 +20,7 @@ from typing import Any, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
+from lightning.pytorch.utilities.types import OptimizerLRScheduler
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -177,7 +178,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     # Lightning hooks — training loop
     # ------------------------------------------------------------------
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> OptimizerLRScheduler:
         """Return the policy optimizer for Lightning's automatic optimization."""
         return self.policy.optimizer
 

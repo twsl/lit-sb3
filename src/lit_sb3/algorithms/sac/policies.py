@@ -61,7 +61,7 @@ class Actor(BasePolicy):
         use_expln: bool = False,
         clip_mean: float = 2.0,
         normalize_images: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -231,7 +231,7 @@ class SACPolicy(BasePolicy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -418,7 +418,7 @@ class CnnPolicy(SACPolicy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -484,7 +484,7 @@ class MultiInputPolicy(SACPolicy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,

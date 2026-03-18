@@ -29,7 +29,7 @@ class MaskableCategorical(Categorical):
         logits: torch.Tensor | None = None,
         validate_args: bool | None = None,
         masks: MaybeMasks = None,
-    ):
+    ) -> None:
         self.masks: torch.Tensor | None = None
         super().__init__(probs, logits, validate_args)
         self._original_logits = self.logits

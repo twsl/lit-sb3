@@ -12,7 +12,7 @@ class VecExtractDictObs(VecEnvWrapper):
         key: The key of the dictionary observation
     """
 
-    def __init__(self, venv: VecEnv, key: str):
+    def __init__(self, venv: VecEnv, key: str) -> None:
         self.key = key
         assert isinstance(venv.observation_space, spaces.Dict), (
             f"VecExtractDictObs can only be used with Dict obs space, not {venv.observation_space}"

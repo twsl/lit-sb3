@@ -6,6 +6,7 @@ import argparse
 import itertools
 from pathlib import Path
 import pickle
+from typing import Any
 import warnings
 
 import numpy as np
@@ -38,7 +39,7 @@ except ImportError:
 
 
 # From https://github.com/mwaskom/seaborn/blob/master/seaborn/categorical.py
-def restyle_boxplot(artist_dict, color, gray="#222222", linewidth=1, fliersize=5):
+def restyle_boxplot(artist_dict: dict[str, Any], color: Any, gray: str = "#222222", linewidth: float = 1, fliersize: float = 5) -> None:
     """Style a matplotlib boxplot to look nicer."""
     for box in artist_dict["boxes"]:
         box.update({"facecolor": color, "zorder": 0.9, "edgecolor": gray, "linewidth": linewidth})

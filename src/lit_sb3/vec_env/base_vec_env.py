@@ -64,7 +64,7 @@ class VecEnv(ABC):
         num_envs: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-    ):
+    ) -> None:
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
@@ -393,7 +393,7 @@ class VecEnvWrapper(VecEnv):
         venv: VecEnv,
         observation_space: spaces.Space | None = None,
         action_space: spaces.Space | None = None,
-    ):
+    ) -> None:
         self.venv = venv
 
         super().__init__(
@@ -519,7 +519,7 @@ class CloudpickleWrapper:
         var: the variable you wish to wrap for pickling with cloudpickle
     """
 
-    def __init__(self, var: Any):
+    def __init__(self, var: Any) -> None:
         self.var = var
 
     def __getstate__(self) -> Any:

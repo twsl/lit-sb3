@@ -47,7 +47,7 @@ class DictReplayBuffer(ReplayBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
-    ):
+    ) -> None:
         super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert isinstance(self.obs_shape, dict), "DictReplayBuffer must be used with Dict obs space only"
@@ -154,7 +154,7 @@ class DictReplayBuffer(ReplayBuffer):
             env: associated gym VecEnv
                 to normalize the observations/rewards when sampling
         """
-        return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
+        return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)  # ty:ignore[invalid-return-type]
 
     def _get_samples(  # type: ignore[override]
         self,

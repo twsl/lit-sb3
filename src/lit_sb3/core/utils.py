@@ -94,7 +94,7 @@ class FloatSchedule:
             (e.g. LinearSchedule, ConstantSchedule)
     """
 
-    def __init__(self, value_schedule: Schedule | float):
+    def __init__(self, value_schedule: Schedule | float) -> None:
         if isinstance(value_schedule, FloatSchedule):
             self.value_schedule: Schedule = value_schedule.value_schedule
         elif isinstance(value_schedule, (float, int)):
@@ -152,7 +152,7 @@ class ConstantSchedule:
         val: constant value
     """
 
-    def __init__(self, val: float):
+    def __init__(self, val: float) -> None:
         self.val = val
 
     def __call__(self, _: float) -> float:
@@ -231,7 +231,7 @@ def constant_fn(val: float) -> Schedule:
     """
     warnings.warn("constant_fn() is deprecated, please use ConstantSchedule() instead", stacklevel=2)
 
-    def func(_):
+    def func(_: float) -> float:
         return val
 
     return func
@@ -773,9 +773,9 @@ def quantile_huber_loss(
 
 def conjugate_gradient_solver(
     matrix_vector_dot_fn: Callable[[torch.Tensor], torch.Tensor],
-    b,
-    max_iter=10,
-    residual_tol=1e-10,
+    b: torch.Tensor,
+    max_iter: int = 10,
+    residual_tol: float = 1e-10,
 ) -> torch.Tensor:
     """Finds an approximate solution to a set of linear equations Ax = b.
 
@@ -834,7 +834,7 @@ def conjugate_gradient_solver(
 
 
 def flat_grad(
-    output,
+    output: torch.Tensor,
     parameters: Sequence[nn.parameter.Parameter],
     create_graph: bool = False,
     retain_graph: bool = False,

@@ -70,7 +70,7 @@ class BaseModel(nn.Module):
         normalize_images: bool = True,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__()
 
         if optimizer_kwargs is None:
@@ -299,7 +299,7 @@ class BasePolicy(BaseModel, ABC):
 
     features_extractor: BaseFeaturesExtractor
 
-    def __init__(self, *args, squash_output: bool = False, **kwargs):
+    def __init__(self, *args, squash_output: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._squash_output = squash_output
 

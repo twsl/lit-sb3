@@ -10,7 +10,7 @@ T = TypeVar("T", int, np.ndarray)
 
 
 class IdentityEnv[T: (int, np.ndarray)](gym.Env):
-    def __init__(self, dim: int | None = None, space: spaces.Space | None = None, ep_length: int = 100):
+    def __init__(self, dim: int | None = None, space: spaces.Space | None = None, ep_length: int = 100) -> None:
         """Identity environment for testing purposes.
 
         Args:
@@ -61,7 +61,7 @@ class IdentityEnv[T: (int, np.ndarray)](gym.Env):
 
 
 class IdentityEnvBox(IdentityEnv[np.ndarray]):
-    def __init__(self, low: float = -1.0, high: float = 1.0, eps: float = 0.05, ep_length: int = 100):
+    def __init__(self, low: float = -1.0, high: float = 1.0, eps: float = 0.05, ep_length: int = 100) -> None:
         """Identity environment for testing purposes.
 
         Args:

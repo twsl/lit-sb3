@@ -12,7 +12,7 @@ class ConvertCallback(BaseCallback):
         verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
-    def __init__(self, callback: Callable[[dict[str, Any], dict[str, Any]], bool] | None, verbose: int = 0):
+    def __init__(self, callback: Callable[[dict[str, Any], dict[str, Any]], bool] | None, verbose: int = 0) -> None:
         super().__init__(verbose)
         self.callback = callback
 

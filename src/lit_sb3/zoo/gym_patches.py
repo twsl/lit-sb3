@@ -8,6 +8,8 @@ Adapted from
 https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/gym_patches.py
 """
 
+from typing import Any
+
 import numpy as np
 
 # Deprecation warning with gym 0.26 and numpy 1.24
@@ -26,7 +28,7 @@ class PatchedTimeLimit(gymnasium.wrappers.TimeLimit):
     is over because of that.
     """
 
-    def step(self, action):
+    def step(self, action: Any) -> tuple[Any, Any, bool, bool, dict[str, Any]]:
         observation, reward, terminated, truncated, info = self.env.step(action)
         self._elapsed_steps += 1  # ty:ignore[unsupported-operator]
 

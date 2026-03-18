@@ -13,7 +13,7 @@ class EveryNTimesteps(EventCallback):
             when the event is triggered.
     """
 
-    def __init__(self, n_steps: int, callback: "BaseCallback"):
+    def __init__(self, n_steps: int, callback: "BaseCallback") -> None:
         super().__init__(callback)
         self.n_steps = n_steps
         self.last_time_trigger = 0
@@ -32,7 +32,7 @@ class LogEveryNTimesteps(EveryNTimesteps):
         n_steps: Number of timesteps between two trigger.
     """
 
-    def __init__(self, n_steps: int):
+    def __init__(self, n_steps: int) -> None:
         super().__init__(n_steps, callback=ConvertCallback(self._log_data))
 
     def _log_data(self, _locals: dict[str, Any], _globals: dict[str, Any]) -> bool:

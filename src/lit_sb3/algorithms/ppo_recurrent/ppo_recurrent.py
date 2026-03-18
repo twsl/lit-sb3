@@ -97,7 +97,7 @@ class RecurrentPPO(OnPolicyAlgorithm):
         seed: int | None = None,
         device: torch.device | str = "auto",
         _init_setup_model: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             policy,
             env,

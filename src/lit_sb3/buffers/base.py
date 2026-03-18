@@ -32,7 +32,7 @@ class BaseBuffer(ABC):
         action_space: spaces.Space,
         device: torch.device | str = "auto",
         n_envs: int = 1,
-    ):
+    ) -> None:
         super().__init__()
         self.buffer_size = buffer_size
         self.observation_space = observation_space
@@ -85,7 +85,7 @@ class BaseBuffer(ABC):
         self.pos = 0
         self.full = False
 
-    def sample(self, batch_size: int, env: VecNormalize | None = None):
+    def sample(self, batch_size: int, env: VecNormalize | None = None) -> ReplayBufferSamples | RolloutBufferSamples:
         """Args.
 
         batch_size: Number of element to sample

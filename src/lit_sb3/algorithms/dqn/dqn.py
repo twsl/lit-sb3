@@ -3,6 +3,7 @@ from typing import Any, ClassVar, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
+from lightning.pytorch.utilities.types import OptimizerLRScheduler
 import numpy as np
 import torch
 from torch.nn import functional as F  # noqa: N812
@@ -189,7 +190,7 @@ class DQN(OffPolicyAlgorithm):
     # Lightning hooks (manual optimization)
     # ------------------------------------------------------------------
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> OptimizerLRScheduler:
         return self.policy.optimizer
 
     def training_step(self, batch: Any, batch_idx: int) -> None:

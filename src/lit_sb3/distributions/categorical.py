@@ -18,7 +18,7 @@ class CategoricalDistribution(Distribution):
         action_dim: Number of discrete actions
     """
 
-    def __init__(self, action_dim: int):
+    def __init__(self, action_dim: int) -> None:
         super().__init__()
         self.action_dim = action_dim
 

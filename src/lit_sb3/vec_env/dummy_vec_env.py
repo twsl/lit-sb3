@@ -32,7 +32,7 @@ class DummyVecEnv(VecEnv):
 
     actions: np.ndarray
 
-    def __init__(self, env_fns: list[Callable[[], gym.Env]]):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]]) -> None:
         self.envs = [_patch_env(fn()) for fn in env_fns]
         if len({id(env.unwrapped) for env in self.envs}) != len(self.envs):
             raise ValueError(

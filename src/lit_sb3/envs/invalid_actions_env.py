@@ -14,7 +14,7 @@ class InvalidActionEnvDiscrete(IdentityEnv[int]):
         dim: int | None = None,
         ep_length: int = 100,
         n_invalid_actions: int = 0,
-    ):
+    ) -> None:
         if dim is None:
             dim = 1
         assert n_invalid_actions < dim, f"Too many invalid actions: {n_invalid_actions} < {dim}"
@@ -47,7 +47,7 @@ class InvalidActionEnvMultiDiscrete(IdentityEnv[np.ndarray]):
         dims: list[int] | None = None,
         ep_length: int = 100,
         n_invalid_actions: int = 0,
-    ):
+    ) -> None:
         if dims is None:
             dims = [1, 1]
 
@@ -89,7 +89,7 @@ class InvalidActionEnvMultiBinary(IdentityEnv[np.ndarray]):
         dims: int | None = None,
         ep_length: int = 100,
         n_invalid_actions: int = 0,
-    ):
+    ) -> None:
         if dims is None:
             dims = 1
 

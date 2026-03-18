@@ -32,7 +32,7 @@ class MaskableEvalCallback(EvalCallback):
         use_masking: Whether to use invalid action masks during evaluation
     """
 
-    def __init__(self, *args, use_masking: bool = True, **kwargs):
+    def __init__(self, *args, use_masking: bool = True, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.use_masking = use_masking
 

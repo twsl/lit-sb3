@@ -58,7 +58,7 @@ class MaskableActorCriticPolicy(BasePolicy):
         normalize_images: bool = True,
         optimizer_class: type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
             # Small values to avoid NaN in Adam optimizer

@@ -2,7 +2,7 @@ import numpy as np
 
 
 class RunningMeanStd:  # TODO replace with https://lightning.ai/docs/torchmetrics/stable/aggregation/running_mean.html
-    def __init__(self, epsilon: float = 1e-4, shape: tuple[int, ...] = ()):
+    def __init__(self, epsilon: float = 1e-4, shape: tuple[int, ...] = ()) -> None:
         """Calculates the running mean and std of a data stream.
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm.

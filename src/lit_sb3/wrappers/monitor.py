@@ -36,7 +36,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         reset_keywords: tuple[str, ...] = (),
         info_keywords: tuple[str, ...] = (),
         override_existing: bool = True,
-    ):
+    ) -> None:
         super().__init__(env=env)
         self.t_start = time.time()
         self.results_writer = None
@@ -164,7 +164,7 @@ class ResultsWriter:
         header: dict[str, float | str] | None = None,
         extra_keys: tuple[str, ...] = (),
         override_existing: bool = True,
-    ):
+    ) -> None:
         if header is None:
             header = {}
         if not filename.endswith(Monitor.EXT):

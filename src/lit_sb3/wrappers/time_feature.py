@@ -27,7 +27,7 @@ class TimeFeatureWrapper(gym.Wrapper[TimeFeatureObs, ActType, TimeFeatureObs, Ac
             learning a deterministic pre-defined sequence of actions.
     """
 
-    def __init__(self, env: gym.Env, max_steps: int = 1000, test_mode: bool = False):
+    def __init__(self, env: gym.Env, max_steps: int = 1000, test_mode: bool = False) -> None:
         assert isinstance(env.observation_space, (spaces.Box, spaces.Dict)), (
             "`TimeFeatureWrapper` only supports `gym.spaces.Box` and `spaces.Dict` (`gym.GoalEnv`) observation spaces."
         )

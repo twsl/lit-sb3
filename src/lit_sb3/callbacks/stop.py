@@ -26,7 +26,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
 
     parent: EvalCallback
 
-    def __init__(self, reward_threshold: float, verbose: int = 0):
+    def __init__(self, reward_threshold: float, verbose: int = 0) -> None:
         super().__init__(verbose=verbose)
         self.reward_threshold = reward_threshold
 
@@ -54,7 +54,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
             reaching ``max_episodes``
     """
 
-    def __init__(self, max_episodes: int, verbose: int = 0):
+    def __init__(self, max_episodes: int, verbose: int = 0) -> None:
         super().__init__(verbose=verbose)
         self.max_episodes = max_episodes
         self._total_max_episodes = max_episodes
@@ -107,7 +107,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
 
     parent: EvalCallback
 
-    def __init__(self, max_no_improvement_evals: int, min_evals: int = 0, verbose: int = 0):
+    def __init__(self, max_no_improvement_evals: int, min_evals: int = 0, verbose: int = 0) -> None:
         super().__init__(verbose=verbose)
         self.max_no_improvement_evals = max_no_improvement_evals
         self.min_evals = min_evals

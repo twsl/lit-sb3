@@ -20,7 +20,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         epsilon: small value to avoid NaN due to numerical imprecision.
     """
 
-    def __init__(self, action_dim: int, epsilon: float = 1e-6):
+    def __init__(self, action_dim: int, epsilon: float = 1e-6) -> None:
         super().__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
         self.epsilon = epsilon

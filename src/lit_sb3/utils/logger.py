@@ -41,7 +41,7 @@ class Video:
         fps: frames per second
     """
 
-    def __init__(self, frames: torch.Tensor, fps: float):
+    def __init__(self, frames: torch.Tensor, fps: float) -> None:
         self.frames = frames
         self.fps = fps
 
@@ -54,7 +54,7 @@ class Figure:
         close: if true, close the figure after logging it
     """
 
-    def __init__(self, figure: matplotlib.figure.Figure, close: bool):
+    def __init__(self, figure: matplotlib.figure.Figure, close: bool) -> None:
         self.figure = figure
         self.close = close
 
@@ -69,7 +69,7 @@ class Image:
             Gym envs normally use 'HWC' (channel last)
     """
 
-    def __init__(self, image: torch.Tensor | np.ndarray | str, dataformats: str):
+    def __init__(self, image: torch.Tensor | np.ndarray | str, dataformats: str) -> None:
         self.image = image
         self.dataformats = dataformats
 
@@ -83,7 +83,7 @@ class HParam:
             A non-empty metrics dict is required to display hyperparameters in the corresponding Tensorboard section.
     """
 
-    def __init__(self, hparam_dict: Mapping[str, bool | str | float | None], metric_dict: Mapping[str, float]):
+    def __init__(self, hparam_dict: Mapping[str, bool | str | float | None], metric_dict: Mapping[str, float]) -> None:
         self.hparam_dict = hparam_dict
         if not metric_dict:
             raise Exception(
@@ -103,7 +103,7 @@ class FormatUnsupportedError(NotImplementedError):
         value_description: Description of the value that cannot be logged by this format.
     """
 
-    def __init__(self, unsupported_formats: Sequence[str], value_description: str):
+    def __init__(self, unsupported_formats: Sequence[str], value_description: str) -> None:
         if len(unsupported_formats) > 1:
             format_str = f"formats {', '.join(unsupported_formats)} are"
         else:
@@ -160,7 +160,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             no longer than 79 characters wide.
     """
 
-    def __init__(self, filename_or_file: str | TextIO, max_length: int = 36):
+    def __init__(self, filename_or_file: str | TextIO, max_length: int = 36) -> None:
         self.max_length = max_length
         if isinstance(filename_or_file, (str, Path)):
             self.file = Path(filename_or_file).open("w")  # noqa: SIM115
@@ -287,11 +287,11 @@ class JSONOutputFormat(KVWriter):
         filename: the file to write the log to
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str) -> None:
         self.file = Path(filename).open("w")  # noqa: SIM115
 
     def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], step: int = 0) -> None:
-        def cast_to_json_serializable(value: Any):
+        def cast_to_json_serializable(value: Any) -> Any:
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["json"], "video")
             if isinstance(value, Figure):
@@ -328,7 +328,7 @@ class CSVOutputFormat(KVWriter):
         filename: the file to write the log to
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str) -> None:
         self.file = Path(filename).open("w+")  # noqa: SIM115
         self.keys: list[str] = []
         self.separator = ","
@@ -393,7 +393,7 @@ class TensorBoardOutputFormat(KVWriter):
         folder: the folder to write the log to
     """
 
-    def __init__(self, folder: str):
+    def __init__(self, folder: str) -> None:
         assert SummaryWriter is not None, "tensorboard is not installed, you can use `pip install tensorboard` to do so"
         self.writer = SummaryWriter(log_dir=folder)
         self._is_closed = False
@@ -482,7 +482,7 @@ class Logger:
         output_formats: the list of output formats
     """
 
-    def __init__(self, folder: str | None, output_formats: list[KVWriter]):
+    def __init__(self, folder: str | None, output_formats: list[KVWriter]) -> None:
         self.name_to_value: dict[str, float] = defaultdict(float)  # values this iteration
         self.name_to_count: dict[str, int] = defaultdict(int)
         self.name_to_excluded: dict[str, tuple[str, ...] | None] = {}

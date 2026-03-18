@@ -35,7 +35,7 @@ class CheckpointCallback(BaseCallback):
         save_replay_buffer: bool = False,
         save_vecnormalize: bool = False,
         verbose: int = 0,
-    ):
+    ) -> None:
         super().__init__(verbose)
         self.save_freq = save_freq
         self.save_path = save_path

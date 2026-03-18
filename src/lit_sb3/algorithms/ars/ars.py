@@ -74,7 +74,7 @@ class ARS(BaseAlgorithm):
         verbose: int = 0,
         device: torch.device | str = "cpu",
         _init_setup_model: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             policy,
             env,

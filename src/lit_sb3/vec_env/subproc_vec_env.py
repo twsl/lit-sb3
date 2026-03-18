@@ -106,7 +106,7 @@ class SubprocVecEnv(VecEnv):
             Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: str | None = None):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: str | None = None) -> None:
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)

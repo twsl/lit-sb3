@@ -72,7 +72,7 @@ class Actor(BasePolicy):
         batch_norm_momentum: float = 0.01,
         batch_norm_eps: float = 0.001,
         renorm_warmup_steps: int = 100_000,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -273,7 +273,7 @@ class CrossQCritic(BaseModel):
         batch_norm_momentum: float = 0.01,
         batch_norm_eps: float = 0.001,
         renorm_warmup_steps: int = 100_000,
-    ):
+    ) -> None:
         super().__init__(
             observation_space,
             action_space,
@@ -388,7 +388,7 @@ class CrossQPolicy(BasePolicy):
         optimizer_kwargs: dict[str, Any] | None = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
-    ):
+    ) -> None:
         if optimizer_kwargs is None:
             # Note: the default value for b1 is 0.9 in Adam.
             # b1=0.5 is used in the original CrossQ implementation

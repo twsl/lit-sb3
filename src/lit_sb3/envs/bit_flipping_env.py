@@ -40,7 +40,7 @@ class BitFlippingEnv(Env):
         image_obs_space: bool = False,
         channel_first: bool = True,
         render_mode: str = "human",
-    ):
+    ) -> None:
         super().__init__()
         self.render_mode = render_mode
         # Shape of the observation when using image space
