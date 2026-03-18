@@ -233,10 +233,25 @@ class SAC(OffPolicyAlgorithm):
         if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
             gradient_steps = self.gradient_steps if self.gradient_steps >= 0 else rollout.episode_timesteps
             if gradient_steps > 0:
-                self._do_gradient_steps(gradient_steps, self.batch_size)
+                stats = self._do_gradient_steps(gradient_steps, self.batch_size)
+                self.log_dict(
+                    {
+                        "train/n_updates": float(self._n_updates),
+                        "train/ent_coef": stats["ent_coef"],
+                        "train/actor_loss": stats["actor_loss"],
+                        "train/critic_loss": stats["critic_loss"],
+                    },
+                    on_step=True,
+                    on_epoch=False,
+                )
+                if "ent_coef_loss" in stats:
+                    self.log("train/ent_coef_loss", stats["ent_coef_loss"], on_step=True, on_epoch=False)
 
-    def _do_gradient_steps(self, gradient_steps: int, batch_size: int) -> None:
-        """SAC gradient updates (manual optimization)."""
+    def _do_gradient_steps(self, gradient_steps: int, batch_size: int) -> dict[str, float]:
+        """SAC gradient updates (manual optimization).
+
+        Returns a dict of scalar stats (losses, ent_coef) for the caller to log.
+        """
         optimizers = self.optimizers()
         actor_opt = optimizers[0]  # ty:ignore[not-subscriptable]
         critic_opt = optimizers[1]  # ty:ignore[not-subscriptable]
@@ -307,18 +322,14 @@ class SAC(OffPolicyAlgorithm):
                 polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
         self._n_updates += gradient_steps
-        self.log_dict(
-            {
-                "train/n_updates": float(self._n_updates),
-                "train/ent_coef": float(np.mean(ent_coefs)),
-                "train/actor_loss": float(np.mean(actor_losses)),
-                "train/critic_loss": float(np.mean(critic_losses)),
-            },
-            on_step=True,
-            on_epoch=False,
-        )
+        stats: dict[str, float] = {
+            "ent_coef": float(np.mean(ent_coefs)),
+            "actor_loss": float(np.mean(actor_losses)),
+            "critic_loss": float(np.mean(critic_losses)),
+        }
         if ent_coef_losses:
-            self.log("train/ent_coef_loss", float(np.mean(ent_coef_losses)), on_step=True, on_epoch=False)
+            stats["ent_coef_loss"] = float(np.mean(ent_coef_losses))
+        return stats
 
     def learn(
         self: SelfSAC,

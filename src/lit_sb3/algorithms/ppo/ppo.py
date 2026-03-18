@@ -201,10 +201,13 @@ class PPO(OnPolicyAlgorithm):
         super().on_train_epoch_start()
         self.policy.set_training_mode(True)
 
-    def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
-        """Compute PPO clipped-surrogate loss for one mini-batch of rollout data."""
-        rollout_data = batch
+    def _compute_loss(self, rollout_data: Any) -> dict[str, torch.Tensor]:
+        """Compute PPO losses for one mini-batch of rollout data.
 
+        Returns a dict with keys ``loss``, ``policy_loss``, ``value_loss``,
+        ``entropy_loss``, ``approx_kl``, and ``clip_range`` as scalar tensors.
+        The caller is responsible for backward, optimizer step, and logging.
+        """
         actions = rollout_data.actions
         if isinstance(self.action_space, spaces.Discrete):
             actions = rollout_data.actions.long().flatten()
@@ -234,11 +237,24 @@ class PPO(OnPolicyAlgorithm):
         entropy_loss = -torch.mean(-log_prob) if entropy is None else -torch.mean(entropy)
         loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
-        # KL divergence check — signal early stopping to Lightning
         with torch.no_grad():
             log_ratio = log_prob - rollout_data.old_log_prob
-            approx_kl_div = float(torch.mean((torch.exp(log_ratio) - 1) - log_ratio).cpu().item())
+            approx_kl_div = torch.mean((torch.exp(log_ratio) - 1) - log_ratio)
 
+        return {
+            "loss": loss,
+            "policy_loss": policy_loss,
+            "value_loss": value_loss,
+            "entropy_loss": entropy_loss,
+            "approx_kl": approx_kl_div,
+            "clip_range": torch.tensor(clip_range),
+        }
+
+    def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
+        """Compute PPO clipped-surrogate loss for one mini-batch of rollout data."""
+        losses = self._compute_loss(batch)
+
+        approx_kl_div = losses["approx_kl"].item()
         if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
             if self.verbose >= 1:
                 print(f"Early stopping due to reaching max kl: {approx_kl_div:.2f}")
@@ -247,12 +263,12 @@ class PPO(OnPolicyAlgorithm):
         self._n_updates += 1
         self.log_dict(
             {
-                "train/policy_loss": policy_loss.item(),
-                "train/value_loss": value_loss.item(),
-                "train/entropy_loss": entropy_loss.item(),
+                "train/policy_loss": losses["policy_loss"].item(),
+                "train/value_loss": losses["value_loss"].item(),
+                "train/entropy_loss": losses["entropy_loss"].item(),
                 "train/approx_kl": approx_kl_div,
-                "train/clip_range": clip_range,
-                "train/loss": loss.item(),
+                "train/clip_range": losses["clip_range"].item(),
+                "train/loss": losses["loss"].item(),
             },
             on_step=True,
             on_epoch=False,
@@ -260,7 +276,7 @@ class PPO(OnPolicyAlgorithm):
         )
         if hasattr(self.policy, "log_std"):
             self.log("train/std", torch.exp(self.policy.log_std).mean().item(), on_step=True, on_epoch=False)
-        return loss
+        return losses["loss"]
 
     def on_train_epoch_end(self) -> None:
         """Log epoch-level PPO stats."""

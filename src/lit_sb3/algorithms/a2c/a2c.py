@@ -146,10 +146,13 @@ class A2C(OnPolicyAlgorithm):
         super().on_train_epoch_start()
         self.policy.set_training_mode(True)
 
-    def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
-        """A2C loss on the full rollout buffer (single gradient step)."""
-        rollout_data = batch
+    def _compute_loss(self, rollout_data: Any) -> dict[str, torch.Tensor]:
+        """Compute A2C losses for one rollout batch.
 
+        Returns a dict with keys ``loss``, ``policy_loss``, ``value_loss``,
+        and ``entropy_loss`` as scalar tensors.
+        The caller is responsible for backward, optimizer step, and logging.
+        """
         actions = rollout_data.actions
         if isinstance(self.action_space, spaces.Discrete):
             actions = actions.long().flatten()
@@ -164,16 +167,26 @@ class A2C(OnPolicyAlgorithm):
         policy_loss = -(advantages * log_prob).mean()
         value_loss = F.mse_loss(rollout_data.returns, values)
         entropy_loss = -torch.mean(-log_prob) if entropy is None else -torch.mean(entropy)
-
         loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+
+        return {
+            "loss": loss,
+            "policy_loss": policy_loss,
+            "value_loss": value_loss,
+            "entropy_loss": entropy_loss,
+        }
+
+    def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
+        """A2C loss on the full rollout buffer (single gradient step)."""
+        losses = self._compute_loss(batch)
 
         self._n_updates += 1
         self.log_dict(
             {
-                "train/policy_loss": policy_loss.item(),
-                "train/value_loss": value_loss.item(),
-                "train/entropy_loss": entropy_loss.item(),
-                "train/loss": loss.item(),
+                "train/policy_loss": losses["policy_loss"].item(),
+                "train/value_loss": losses["value_loss"].item(),
+                "train/entropy_loss": losses["entropy_loss"].item(),
+                "train/loss": losses["loss"].item(),
                 "train/n_updates": float(self._n_updates),
             },
             on_step=True,
@@ -181,7 +194,7 @@ class A2C(OnPolicyAlgorithm):
         )
         if hasattr(self.policy, "log_std"):
             self.log("train/std", torch.exp(self.policy.log_std).mean().item(), on_step=True, on_epoch=False)
-        return loss
+        return losses["loss"]
 
     def on_train_epoch_end(self) -> None:
         explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())

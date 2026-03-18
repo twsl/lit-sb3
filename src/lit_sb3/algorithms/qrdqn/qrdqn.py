@@ -162,10 +162,15 @@ class QRDQN(OffPolicyAlgorithm):
         if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
             gradient_steps = self.gradient_steps if self.gradient_steps >= 0 else rollout.episode_timesteps
             if gradient_steps > 0:
-                self._do_gradient_steps(gradient_steps, self.batch_size)
+                stats = self._do_gradient_steps(gradient_steps, self.batch_size)
+                self.log("train/n_updates", float(self._n_updates), on_step=True, on_epoch=False)
+                self.log("train/loss", stats["loss"], on_step=True, on_epoch=False)
 
-    def _do_gradient_steps(self, gradient_steps: int, batch_size: int) -> None:
-        """QRDQN gradient updates (manual optimization with quantile Huber loss)."""
+    def _do_gradient_steps(self, gradient_steps: int, batch_size: int) -> dict[str, float]:
+        """QRDQN gradient updates (manual optimization with quantile Huber loss).
+
+        Returns a dict of scalar stats (losses) for the caller to log.
+        """
         opt = self.optimizers()
 
         self.policy.set_training_mode(True)
@@ -197,8 +202,7 @@ class QRDQN(OffPolicyAlgorithm):
             opt.step()  # ty:ignore[unresolved-attribute]
 
         self._n_updates += gradient_steps
-        self.log("train/n_updates", float(self._n_updates), on_step=True, on_epoch=False)
-        self.log("train/loss", float(np.mean(losses)), on_step=True, on_epoch=False)
+        return {"loss": float(np.mean(losses))}
 
     def predict(
         self,

@@ -185,10 +185,17 @@ class TD3(OffPolicyAlgorithm):
         if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
             gradient_steps = self.gradient_steps if self.gradient_steps >= 0 else rollout.episode_timesteps
             if gradient_steps > 0:
-                self._do_gradient_steps(gradient_steps, self.batch_size)
+                stats = self._do_gradient_steps(gradient_steps, self.batch_size)
+                self.log("train/n_updates", float(self._n_updates), on_step=True, on_epoch=False)
+                self.log("train/critic_loss", stats["critic_loss"], on_step=True, on_epoch=False)
+                if "actor_loss" in stats:
+                    self.log("train/actor_loss", stats["actor_loss"], on_step=True, on_epoch=False)
 
-    def _do_gradient_steps(self, gradient_steps: int, batch_size: int) -> None:
-        """TD3 gradient updates (manual optimization)."""
+    def _do_gradient_steps(self, gradient_steps: int, batch_size: int) -> dict[str, float]:
+        """TD3 gradient updates (manual optimization).
+
+        Returns a dict of scalar stats (losses) for the caller to log.
+        """
         optimizers = self.optimizers()
         actor_opt = optimizers[0]  # ty:ignore[not-subscriptable]
         critic_opt = optimizers[1]  # ty:ignore[not-subscriptable]
@@ -234,10 +241,10 @@ class TD3(OffPolicyAlgorithm):
                 polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
                 polyak_update(self.actor_batch_norm_stats, self.actor_batch_norm_stats_target, 1.0)
 
-        self.log("train/n_updates", float(self._n_updates), on_step=True, on_epoch=False)
-        self.log("train/critic_loss", float(np.mean(critic_losses)), on_step=True, on_epoch=False)
+        stats: dict[str, float] = {"critic_loss": float(np.mean(critic_losses))}
         if actor_losses:
-            self.log("train/actor_loss", float(np.mean(actor_losses)), on_step=True, on_epoch=False)
+            stats["actor_loss"] = float(np.mean(actor_losses))
+        return stats
 
     def learn(
         self: SelfTD3,

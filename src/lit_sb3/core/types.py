@@ -87,6 +87,29 @@ class TrainFreq(NamedTuple):
     unit: TrainFrequencyUnit  # either "step" or "episode"
 
 
+class AgentProtocol(Protocol):
+    """Structural protocol for RL agents.
+
+    Used for ``agent: AgentProtocol | None`` type annotations on algorithm
+    classes before the full ``BaseAgent`` ABC is wired in (Phase 2).
+    Import the concrete ABC from ``lit_sb3.agents`` for runtime checks.
+    """
+
+    def configure_optimizers(self) -> list[Any]: ...
+
+    def compute_loss(self, batch: Any) -> dict[str, Any]: ...
+
+    def get_action(
+        self,
+        observation: np.ndarray | dict[str, np.ndarray],
+        state: tuple[np.ndarray, ...] | None = None,
+        episode_start: np.ndarray | None = None,
+        deterministic: bool = False,
+    ) -> tuple[np.ndarray, tuple[np.ndarray, ...] | None]: ...
+
+    def set_training_mode(self, mode: bool) -> None: ...
+
+
 class PolicyPredictor(Protocol):
     def predict(
         self,

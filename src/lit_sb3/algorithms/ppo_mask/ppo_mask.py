@@ -329,10 +329,13 @@ class MaskablePPO(OnPolicyAlgorithm):
         super().on_train_epoch_start()  # collect_rollouts uses use_masking=True by default
         self.policy.set_training_mode(True)
 
-    def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
-        """Compute MaskablePPO clipped-surrogate loss for one mini-batch."""
-        rollout_data = batch
+    def _compute_loss(self, rollout_data: Any) -> dict[str, torch.Tensor]:
+        """Compute MaskablePPO losses for one rollout mini-batch.
 
+        Returns a dict with keys ``loss``, ``policy_loss``, ``value_loss``,
+        ``entropy_loss``, ``approx_kl``, and ``clip_range`` as scalar tensors.
+        The caller is responsible for backward, optimizer step, and logging.
+        """
         actions = rollout_data.actions
         if isinstance(self.action_space, spaces.Discrete):
             actions = rollout_data.actions.long().flatten()
@@ -365,14 +368,28 @@ class MaskablePPO(OnPolicyAlgorithm):
         entropy_loss = -torch.mean(-log_prob) if entropy is None else -torch.mean(entropy)
         loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
+        with torch.no_grad():
+            log_ratio = log_prob - rollout_data.old_log_prob
+            approx_kl_div = torch.mean((torch.exp(log_ratio) - 1) - log_ratio)
+
+        return {
+            "loss": loss,
+            "policy_loss": policy_loss,
+            "value_loss": value_loss,
+            "entropy_loss": entropy_loss,
+            "approx_kl": approx_kl_div,
+            "clip_range": torch.tensor(clip_range),
+        }
+
+    def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
+        """Compute MaskablePPO clipped-surrogate loss for one mini-batch."""
+        losses = self._compute_loss(batch)
+
         # Gradient clipping (Lightning runs backward automatically)
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
 
         # KL divergence early stopping
-        with torch.no_grad():
-            log_ratio = log_prob - rollout_data.old_log_prob
-            approx_kl_div = float(torch.mean((torch.exp(log_ratio) - 1) - log_ratio).cpu().item())
-
+        approx_kl_div = losses["approx_kl"].item()
         if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
             if self.verbose >= 1:
                 print(f"Early stopping due to reaching max kl: {approx_kl_div:.2f}")
@@ -381,17 +398,17 @@ class MaskablePPO(OnPolicyAlgorithm):
         self._n_updates += 1
         self.log_dict(
             {
-                "train/policy_loss": policy_loss.item(),
-                "train/value_loss": value_loss.item(),
-                "train/entropy_loss": entropy_loss.item(),
+                "train/policy_loss": losses["policy_loss"].item(),
+                "train/value_loss": losses["value_loss"].item(),
+                "train/entropy_loss": losses["entropy_loss"].item(),
                 "train/approx_kl": approx_kl_div,
-                "train/clip_range": clip_range,
-                "train/loss": loss.item(),
+                "train/clip_range": losses["clip_range"].item(),
+                "train/loss": losses["loss"].item(),
             },
             on_step=True,
             on_epoch=False,
         )
-        return loss
+        return losses["loss"]
 
     def on_train_epoch_end(self) -> None:
         """Log epoch-level stats."""
