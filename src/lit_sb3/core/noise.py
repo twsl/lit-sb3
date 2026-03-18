@@ -8,15 +8,13 @@ from numpy.typing import DTypeLike
 
 
 class ActionNoise(ABC):
-    """The action noise base class.
-    """
+    """The action noise base class."""
 
     def __init__(self) -> None:
         super().__init__()
 
     def reset(self) -> None:  # noqa: B027
-        """Call end of episode reset for the noise.
-        """
+        """Call end of episode reset for the noise."""
         pass
 
     @abstractmethod
@@ -89,8 +87,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         return noise.astype(self._dtype)
 
     def reset(self) -> None:
-        """Reset the Ornstein Uhlenbeck noise, to the initial position.
-        """
+        """Reset the Ornstein Uhlenbeck noise, to the initial position."""
         self.noise_prev = self.initial_noise if self.initial_noise is not None else np.zeros_like(self._mu)
 
     def __repr__(self) -> str:
@@ -132,8 +129,7 @@ class VectorizedActionNoise(ActionNoise):
         return f"VecNoise(BaseNoise={self.base_noise!r}), n_envs={len(self.noises)})"
 
     def __call__(self) -> np.ndarray:
-        """Generate and stack the action noise from each noise object.
-        """
+        """Generate and stack the action noise from each noise object."""
         noise = np.stack([noise() for noise in self.noises])
         return noise
 

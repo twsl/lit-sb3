@@ -13,7 +13,7 @@ from torch.utils.data import IterableDataset
 
 if TYPE_CHECKING:
     from lit_sb3.buffers import ReplayBuffer, RolloutBuffer
-    from lit_sb3.common.types import RolloutBufferSamples
+    from lit_sb3.core.types import RolloutBufferSamples
 
 
 class RolloutDataset(IterableDataset):

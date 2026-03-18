@@ -5,7 +5,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
+from lit_sb3.core.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from lit_sb3.vec_env import DummyVecEnv, VecCheckNan
 
 
@@ -30,8 +30,7 @@ def _is_numpy_array_space(space: spaces.Space) -> bool:
 
 
 def _starts_at_zero(space: spaces.Discrete | spaces.MultiDiscrete) -> bool:
-    """Return False if a (Multi)Discrete space has a non-zero start.
-    """
+    """Return False if a (Multi)Discrete space has a non-zero start."""
     return np.allclose(space.start, np.zeros_like(space.start))
 
 
@@ -50,7 +49,8 @@ def _check_non_zero_start(space: spaces.Space, space_type: str = "observation", 
             f"{type(space).__name__} {space_type} space {maybe_key} with a non-zero start (start={space.start}) "
             "is not supported by Stable-Baselines3. "
             "You can use a wrapper (see https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html) "
-            f"or update your {space_type} space.", stacklevel=2
+            f"or update your {space_type} space.",
+            stacklevel=2,
         )
 
 
@@ -69,7 +69,8 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             f"It seems that your observation {key} is an image but its `dtype` "
             f"is ({observation_space.dtype}) whereas it has to be `np.uint8`. "
             "If your observation is not an image, we recommend you to flatten the observation "
-            "to have only a 1D vector", stacklevel=2
+            "to have only a 1D vector",
+            stacklevel=2,
         )
 
     if np.any(observation_space.low != 0) or np.any(observation_space.high != 255):
@@ -77,7 +78,8 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             f"It seems that your observation space {key} is an image but the "
             "upper and lower bounds are not in [0, 255]. "
             "Because the CNN policy normalize automatically the observation "
-            "you may encounter issue if the values are not in that range.", stacklevel=2
+            "you may encounter issue if the values are not in that range.",
+            stacklevel=2,
         )
 
     non_channel_idx = 0
@@ -89,7 +91,8 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
         warnings.warn(
             "The minimal resolution for an image is 36x36 for the default `CnnPolicy`. "
             "You might need to use a custom features extractor "
-            "cf. https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html", stacklevel=2
+            "cf. https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html",
+            stacklevel=2,
         )
 
 
@@ -117,7 +120,8 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
                 "(Dict spaces inside Dict space). "
                 "You should flatten it to have only one level of keys."
                 "For example, `dict(space1=dict(space2=Box(), space3=Box()), spaces4=Discrete())` "
-                "is not supported but `dict(space2=Box(), spaces3=Box(), spaces4=Discrete())` is.", stacklevel=2
+                "is not supported but `dict(space2=Box(), spaces3=Box(), spaces4=Discrete())` is.",
+                stacklevel=2,
             )
 
     if isinstance(observation_space, spaces.MultiDiscrete) and len(observation_space.nvec.shape) > 1:
@@ -125,7 +129,8 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             f"The MultiDiscrete observation space uses a multidimensional array {observation_space.nvec} "
             "which is currently not supported by Stable-Baselines3. "
             "Please convert it to a 1D array using a wrapper: "
-            "https://github.com/DLR-RM/stable-baselines3/issues/1836.", stacklevel=2
+            "https://github.com/DLR-RM/stable-baselines3/issues/1836.",
+            stacklevel=2,
         )
 
     if isinstance(observation_space, spaces.Tuple):
@@ -134,7 +139,8 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "this is currently not supported by Stable Baselines3. "
             "However, you can convert it to a Dict observation space "
             "(cf. https://gymnasium.farama.org/api/spaces/composite/#dict). "
-            "which is supported by SB3.", stacklevel=2
+            "which is supported by SB3.",
+            stacklevel=2,
         )
         # Check for Sequence spaces inside Tuple
         for space in observation_space.spaces:
@@ -147,7 +153,8 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
     if _is_oneof_space(observation_space):
         warnings.warn(
             "OneOf observation space is not supported by Stable-Baselines3. "
-            "Note: The checks for returned values are skipped.", stacklevel=2
+            "Note: The checks for returned values are skipped.",
+            stacklevel=2,
         )
         should_skip = True
 
@@ -157,14 +164,16 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         warnings.warn(
             "Sequence observation space is not supported by Stable-Baselines3. "
             "You can pad your observation to have a fixed size instead.\n"
-            "Note: The checks for returned values are skipped.", stacklevel=2
+            "Note: The checks for returned values are skipped.",
+            stacklevel=2,
         )
         should_skip = True
 
     if isinstance(observation_space, spaces.Graph) or graph_space:
         warnings.warn(
             "Graph observation space is not supported by Stable-Baselines3. "
-            "Note: The checks for returned values are skipped.", stacklevel=2
+            "Note: The checks for returned values are skipped.",
+            stacklevel=2,
         )
         should_skip = True
 
@@ -174,7 +183,8 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         warnings.warn(
             "The action space is not based off a numpy array. Typically this means it's either a Dict or Tuple space. "
             "This type of action space is currently not supported by Stable Baselines 3. You should try to flatten the "
-            "action using a wrapper.", stacklevel=2
+            "action using a wrapper.",
+            stacklevel=2,
         )
     return should_skip
 
@@ -189,8 +199,7 @@ def _check_nan(env: gym.Env) -> None:
 
 
 def _is_goal_env(env: gym.Env) -> bool:
-    """Check if the env uses the convention for goal-conditioned envs (previously, the gym.GoalEnv interface).
-    """
+    """Check if the env uses the convention for goal-conditioned envs (previously, the gym.GoalEnv interface)."""
     # We need to unwrap the env since gym.Wrapper has the compute_reward method
     return hasattr(env.unwrapped, "compute_reward")
 
@@ -321,13 +330,13 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
         warnings.warn(
             f"Your observation {key} has an unconventional shape (neither an image, nor a 1D vector). "
             "We recommend you to flatten the observation "
-            "to have only a 1D vector or use a custom policy to properly process the data.", stacklevel=2
+            "to have only a 1D vector or use a custom policy to properly process the data.",
+            stacklevel=2,
         )
 
 
 def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
-    """Check the returned values by the env when calling `.reset()` or `.step()` methods.
-    """
+    """Check the returned values by the env when calling `.reset()` or `.step()` methods."""
     # because env inherits from gymnasium.Env, we assume that `reset()` and `step()` methods exists
     reset_returns = env.reset()
     assert isinstance(reset_returns, tuple), "`reset()` must return a tuple (obs, info)"
@@ -455,7 +464,8 @@ def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
         warnings.warn(
             "No render modes was declared in the environment "
             "(env.metadata['render_modes'] is None or not defined), "
-            "you may have trouble when calling `.render()`", stacklevel=2
+            "you may have trouble when calling `.render()`",
+            stacklevel=2,
         )
 
     # Only check current render mode
@@ -515,7 +525,8 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         ):
             warnings.warn(
                 "We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
-                "cf. https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html", stacklevel=2
+                "cf. https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html",
+                stacklevel=2,
             )
 
         if isinstance(action_space, spaces.Box):
@@ -525,7 +536,8 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
         if isinstance(action_space, spaces.Box) and action_space.dtype != np.dtype(np.float32):
             warnings.warn(
-                f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors.", stacklevel=2
+                f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors.",
+                stacklevel=2,
             )
 
     # If Sequence or Graph observation space, do not check the observation any further

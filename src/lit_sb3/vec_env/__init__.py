@@ -16,7 +16,9 @@ from lit_sb3.vec_env.vec_video_recorder import VecVideoRecorder
 VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 
 
-def unwrap_vec_wrapper[VecEnvWrapperT: VecEnvWrapper](env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]) -> VecEnvWrapperT | None:
+def unwrap_vec_wrapper[VecEnvWrapperT: VecEnvWrapper](
+    env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]
+) -> VecEnvWrapperT | None:
     """Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
     Args:

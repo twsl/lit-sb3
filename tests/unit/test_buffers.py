@@ -13,9 +13,9 @@ from lit_sb3.buffers.dict_replay import DictReplayBuffer
 from lit_sb3.buffers.dict_rollout import DictRolloutBuffer
 from lit_sb3.buffers.replay import ReplayBuffer
 from lit_sb3.buffers.rollout import RolloutBuffer
-from lit_sb3.common.env_checker import check_env
-from lit_sb3.common.types import DictReplayBufferSamples, ReplayBufferSamples
-from lit_sb3.common.utils import get_device
+from lit_sb3.core.env_checker import check_env
+from lit_sb3.core.types import DictReplayBufferSamples, ReplayBufferSamples
+from lit_sb3.core.utils import get_device
 from lit_sb3.utils.env_util import make_vec_env
 from lit_sb3.vec_env import VecNormalize
 
@@ -102,7 +102,7 @@ def test_replay_buffer_normalization(replay_buffer_cls):
     # Test observation normalization (mean should be close to ~2 after normalization)
     for observations in [sample.observations, sample.next_observations]:
         if isinstance(sample, DictReplayBufferSamples):
-            for key in observations.keys():
+            for key in observations:
                 assert th.allclose(observations[key].mean(0), th.zeros(1), atol=1)
         elif isinstance(sample, ReplayBufferSamples):
             assert th.allclose(observations.mean(0), th.zeros(1), atol=1)
@@ -149,7 +149,7 @@ def test_device_buffer(replay_buffer_cls, device):
     for minibatch in list(data):
         for value in minibatch:
             if isinstance(value, dict):
-                for key in value.keys():
+                for key in value:
                     assert value[key].device.type == desired_device
             elif isinstance(value, th.Tensor):
                 assert value.device.type == desired_device
@@ -182,7 +182,7 @@ def test_device_buffer(replay_buffer_cls, device):
 )
 def test_buffer_dtypes(obs_dtype, use_dict, action_space):
     obs_space = spaces.Box(0, 100, dtype=obs_dtype)
-    buffer_params = dict(buffer_size=1, action_space=action_space)
+    buffer_params = {"buffer_size": 1, "action_space": action_space}
     actual_replay_action_dtype = ReplayBuffer._maybe_cast_dtype(action_space.dtype)
     # For on-policy, float32 for backward compat
     actual_rollout_action_dtype = np.float32
@@ -190,16 +190,16 @@ def test_buffer_dtypes(obs_dtype, use_dict, action_space):
     if use_dict:
         dict_obs_space = spaces.Dict({"obs": obs_space, "obs_2": spaces.Box(0, 100, dtype=np.uint8)})
         buffer_params["observation_space"] = dict_obs_space
-        rollout_buffer = DictRolloutBuffer(**buffer_params)
-        replay_buffer = DictReplayBuffer(**buffer_params)
+        rollout_buffer = DictRolloutBuffer(**buffer_params)  # ty:ignore[invalid-argument-type]
+        replay_buffer = DictReplayBuffer(**buffer_params)  # ty:ignore[invalid-argument-type]
         assert rollout_buffer.observations["obs"].dtype == obs_dtype
         assert replay_buffer.observations["obs"].dtype == obs_dtype
         assert rollout_buffer.observations["obs_2"].dtype == np.uint8
         assert replay_buffer.observations["obs_2"].dtype == np.uint8
     else:
         buffer_params["observation_space"] = obs_space
-        rollout_buffer = RolloutBuffer(**buffer_params)
-        replay_buffer = ReplayBuffer(**buffer_params)
+        rollout_buffer = RolloutBuffer(**buffer_params)  # ty:ignore[invalid-argument-type]
+        replay_buffer = ReplayBuffer(**buffer_params)  # ty:ignore[invalid-argument-type]
         assert rollout_buffer.observations.dtype == obs_dtype
         assert replay_buffer.observations.dtype == obs_dtype
 
@@ -214,10 +214,10 @@ def test_buffer_dtypes(obs_dtype, use_dict, action_space):
     assert rollout_data.actions.numpy().dtype == actual_rollout_action_dtype
     assert buffer_data.actions.numpy().dtype == actual_replay_action_dtype
     if use_dict:
-        assert buffer_data.observations["obs"].numpy().dtype == obs_dtype
-        assert buffer_data.observations["obs_2"].numpy().dtype == np.uint8
-        assert rollout_data.observations["obs"].numpy().dtype == obs_dtype
-        assert rollout_data.observations["obs_2"].numpy().dtype == np.uint8
+        assert buffer_data.observations["obs"].numpy().dtype == obs_dtype  # ty:ignore[invalid-argument-type]
+        assert buffer_data.observations["obs_2"].numpy().dtype == np.uint8  # ty:ignore[invalid-argument-type]
+        assert rollout_data.observations["obs"].numpy().dtype == obs_dtype  # ty:ignore[invalid-argument-type]
+        assert rollout_data.observations["obs_2"].numpy().dtype == np.uint8  # ty:ignore[invalid-argument-type]
     else:
         assert buffer_data.observations.numpy().dtype == obs_dtype
         assert rollout_data.observations.numpy().dtype == obs_dtype

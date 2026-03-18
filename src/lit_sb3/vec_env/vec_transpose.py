@@ -4,7 +4,7 @@ from typing import Union
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.common.preprocessing import is_image_space, is_image_space_channels_first
+from lit_sb3.core.preprocessing import is_image_space, is_image_space_channels_first
 from lit_sb3.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -112,8 +112,7 @@ class VecTransposeImage(VecEnvWrapper):
         return self.transpose_observations(observations), rewards, dones, infos
 
     def reset(self) -> np.ndarray | dict:
-        """Reset all environments.
-        """
+        """Reset all environments."""
         observations = self.venv.reset()
         assert isinstance(observations, (np.ndarray, dict))
         return self.transpose_observations(observations)

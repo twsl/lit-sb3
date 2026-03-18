@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from lit_sb3.common.types import AtariResetReturn, AtariStepReturn
+from lit_sb3.core.types import AtariResetReturn, AtariStepReturn
 
 
 class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):

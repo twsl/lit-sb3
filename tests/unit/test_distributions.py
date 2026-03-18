@@ -8,7 +8,7 @@ from copy import deepcopy
 import pytest
 import torch as th
 
-from lit_sb3.common.utils import set_random_seed
+from lit_sb3.core.utils import set_random_seed
 from lit_sb3.distributions.bernoulli import BernoulliDistribution
 from lit_sb3.distributions.categorical import CategoricalDistribution
 from lit_sb3.distributions.gaussian import DiagGaussianDistribution
@@ -134,7 +134,7 @@ def test_kl_divergence(dist_type):
         state = th.rand(1, N_FEATURES).repeat(N_SAMPLES, 1)
         mean_actions1 = th.rand(1).repeat(N_SAMPLES, 1)
         mean_actions2 = th.rand(1).repeat(N_SAMPLES, 1)
-        _, log_std = dist1.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
+        _, log_std = dist1.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))  # ty:ignore[invalid-argument-type]
         dist1.sample_weights(log_std, batch_size=N_SAMPLES)
         dist2.sample_weights(log_std, batch_size=N_SAMPLES)
         dist1 = dist1.proba_distribution(mean_actions1, log_std, state)
@@ -153,8 +153,8 @@ def test_kl_divergence(dist_type):
         full_kl_div = kl_divergence(dist1, dist2)
         actions = th.tensor([0.0, 1.0])
         ad_hoc_kl = th.sum(
-            th.exp(dist1.distribution.log_prob(actions))
-            * (dist1.distribution.log_prob(actions) - dist2.distribution.log_prob(actions))
+            th.exp(dist1.distribution.log_prob(actions))  # ty:ignore[unresolved-attribute]
+            * (dist1.distribution.log_prob(actions) - dist2.distribution.log_prob(actions))  # ty:ignore[unresolved-attribute]
         )
         assert th.allclose(full_kl_div, ad_hoc_kl)
 
@@ -171,5 +171,5 @@ def test_sde_distribution():
     dist = dist.proba_distribution(deterministic_actions, log_std, state)
     actions = dist.get_actions()
 
-    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=2e-2)
-    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=2e-2)
+    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=2e-2)  # ty:ignore[unresolved-attribute]
+    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=2e-2)  # ty:ignore[unresolved-attribute]

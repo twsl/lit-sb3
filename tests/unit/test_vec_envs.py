@@ -8,6 +8,7 @@ import functools
 import itertools
 import multiprocessing
 import os
+from pathlib import Path
 import shutil
 
 import gymnasium as gym
@@ -113,10 +114,10 @@ def test_vec_env_wrapper():
 
 def test_vec_env_getattr():
     env = make_vec_env("CartPole-v1")
-    env.foo = 123
+    env.foo = 123  # ty:ignore[unresolved-attribute]
     env2 = VecCheckNan(env)
-    env2.bar = 123
-    assert env.foo == env2.foo
+    env2.bar = 123  # ty:ignore[unresolved-attribute]
+    assert env.foo == env2.foo  # ty:ignore[unresolved-attribute]
     assert env2.bar == 123
     env2.close()
 
@@ -134,7 +135,7 @@ def test_custom_vec_env(tmp_path):
     )
     assert env.num_envs == 1
     assert isinstance(env, SubprocVecEnv)
-    assert os.path.isdir(monitor_dir)
+    assert Path(monitor_dir).is_dir()
     env.close()
     shutil.rmtree(monitor_dir)
 
@@ -212,7 +213,7 @@ class StepEnv(gym.Env):
 
     def __init__(self, max_steps):
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Box(np.array([0]), np.array([999]), dtype="int64")
+        self.observation_space = gym.spaces.Box(np.array([0]), np.array([999]), dtype="int64")  # ty:ignore[invalid-argument-type]
         self.max_steps = max_steps
         self.current_step = 0
 
@@ -235,10 +236,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
     vec_env = vec_env_class([functools.partial(StepEnv, n) for n in step_nums])
 
     if vec_env_wrapper is not None:
-        if vec_env_wrapper == VecFrameStack:
-            vec_env = vec_env_wrapper(vec_env, n_stack=2)
-        else:
-            vec_env = vec_env_wrapper(vec_env)
+        vec_env = vec_env_wrapper(vec_env, n_stack=2) if vec_env_wrapper == VecFrameStack else vec_env_wrapper(vec_env)
 
     zero_acts = np.zeros((N_ENVS,), dtype="int")
     prev_obs_b = vec_env.reset()
@@ -247,7 +245,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
         assert len(obs_b) == N_ENVS
         assert len(done_b) == N_ENVS
         assert len(info_b) == N_ENVS
-        env_iter = zip(prev_obs_b, obs_b, done_b, info_b, step_nums)
+        env_iter = zip(prev_obs_b, obs_b, done_b, info_b, step_nums, strict=False)
         for prev_obs, obs, done, info, final_step_num in env_iter:
             assert done == (step_num == final_step_num)
             if not done:
@@ -359,7 +357,7 @@ def test_framestack_vecenv():
     obs, _, _, _ = vec_env.step(zero_acts)
     vec_env.close()
     # Should be stacked on the last dimension
-    assert obs.shape[-1] == (image_space_shape[-1] * 2)
+    assert obs.shape[-1] == (image_space_shape[-1] * 2)  # ty:ignore[unresolved-attribute]
 
     # Try automatic stacking on first dimension (transposed images)
     vec_env = DummyVecEnv([make_transposed_image_env for _ in range(N_ENVS)])
@@ -367,21 +365,21 @@ def test_framestack_vecenv():
     obs, _, _, _ = vec_env.step(transposed_zero_acts)
     vec_env.close()
     # Should be stacked on the first dimension
-    assert obs.shape[1] == (image_space_shape[-1] * 2)
+    assert obs.shape[1] == (image_space_shape[-1] * 2)  # ty:ignore[unresolved-attribute]
 
     # Try forcing channels_order="last"
     vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
     vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="last")
     obs, _, _, _ = vec_env.step(zero_acts)
     vec_env.close()
-    assert obs.shape[-1] == (image_space_shape[-1] * 2)
+    assert obs.shape[-1] == (image_space_shape[-1] * 2)  # ty:ignore[unresolved-attribute]
 
     # Try forcing channels_order="first"
     vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
     vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="first")
     obs, _, _, _ = vec_env.step(zero_acts)
     vec_env.close()
-    assert obs.shape[1] == (image_space_shape[0] * 2)
+    assert obs.shape[1] == (image_space_shape[0] * 2)  # ty:ignore[unresolved-attribute]
 
     # Test invalid channels_order
     vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])

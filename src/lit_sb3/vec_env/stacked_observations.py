@@ -5,7 +5,7 @@ import warnings
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.common.preprocessing import is_image_space, is_image_space_channels_first
+from lit_sb3.core.preprocessing import is_image_space, is_image_space_channels_first
 
 TObs = TypeVar("TObs", np.ndarray, dict[str, np.ndarray])
 

@@ -8,7 +8,7 @@ import torch
 
 from lit_sb3.algorithms.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from lit_sb3.buffers import DictReplayBuffer
-from lit_sb3.common.types import DictReplayBufferSamples
+from lit_sb3.core.types import DictReplayBufferSamples
 from lit_sb3.vec_env import VecEnv, VecNormalize
 
 
@@ -406,7 +406,8 @@ class HerReplayBuffer(DictReplayBuffer):
             warnings.warn(
                 "The last trajectory in the replay buffer will be truncated.\n"
                 "If you are in the same episode as when the replay buffer was saved,\n"
-                "you should use `truncate_last_trajectory=False` to avoid that issue.", stacklevel=2
+                "you should use `truncate_last_trajectory=False` to avoid that issue.",
+                stacklevel=2,
             )
             # only consider episodes that are not finished
             for env_idx in np.where(self._current_ep_start != self.pos)[0]:

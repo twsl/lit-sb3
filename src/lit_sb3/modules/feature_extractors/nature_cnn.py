@@ -3,7 +3,7 @@ from gymnasium import spaces
 import torch
 from torch import nn
 
-from lit_sb3.common.preprocessing import is_image_space
+from lit_sb3.core.preprocessing import is_image_space
 from lit_sb3.modules.feature_extractors.base import BaseFeaturesExtractor
 
 

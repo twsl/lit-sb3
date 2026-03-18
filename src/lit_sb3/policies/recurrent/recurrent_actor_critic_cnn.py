@@ -4,7 +4,7 @@ from gymnasium import spaces
 import torch
 from torch import nn
 
-from lit_sb3.common.types import Schedule
+from lit_sb3.core.types import Schedule
 from lit_sb3.modules import BaseFeaturesExtractor, NatureCNN
 from lit_sb3.policies.recurrent.recurrent_actor_critic import RecurrentActorCriticPolicy
 

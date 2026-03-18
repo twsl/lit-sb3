@@ -5,6 +5,7 @@ Adapted from stable-baselines3 tests/test_logger.py.
 
 from io import TextIOBase
 import os
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -76,7 +77,9 @@ def read_log(tmp_path, capsys):
         elif _format == "log":
             return LogContent(_format, (tmp_path / "log.txt").read_text().splitlines())
         elif _format == "tensorboard":
-            from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+            from tensorboard.backend.event_processing.event_accumulator import (  # ty:ignore[unresolved-import]
+                EventAccumulator,
+            )
 
             acc = EventAccumulator(str(tmp_path))
             acc.Reload()
@@ -150,7 +153,7 @@ def test_exclude_keys(tmp_path, read_log, _format):
         pytest.importorskip("tensorboard")
 
     writer = make_output_format(_format, tmp_path)
-    writer.write(dict(some_tag=42), key_excluded=dict(some_tag=(_format)))
+    writer.write({"some_tag": 42}, key_excluded={"some_tag": (_format)})
     writer.close()
     assert read_log(_format).empty
 
@@ -203,8 +206,8 @@ def test_unsupported_hparam(tmp_path, unsupported_format):
 
 def test_key_length(tmp_path):
     writer = make_output_format("stdout", tmp_path)
-    assert writer.max_length == 36
-    long_prefix = "a" * writer.max_length
+    assert writer.max_length == 36  # ty:ignore[unresolved-attribute]
+    long_prefix = "a" * writer.max_length  # ty:ignore[unresolved-attribute]
 
     ok_dict = {
         "a" + long_prefix: 42,
@@ -224,7 +227,7 @@ def test_key_length(tmp_path):
     with pytest.raises(ValueError, match=r"Key.*truncated"):
         writer.write(long_key_dict, long_key_excluded)
 
-    writer.max_length += 1
+    writer.max_length += 1  # ty:ignore[unresolved-attribute]
     writer.write(long_key_dict, long_key_excluded)
 
 
@@ -280,4 +283,4 @@ def test_configure_creates_dir(tmp_path):
     log_dir = str(tmp_path / "new_subdir")
     logger = configure(folder=log_dir)
     assert logger.dir == log_dir
-    assert os.path.isdir(log_dir)
+    assert Path(log_dir).is_dir()

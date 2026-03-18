@@ -7,7 +7,7 @@ import gymnasium as gym
 
 from lit_sb3.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 from lit_sb3.vec_env.patch_gym import _patch_env
-from lit_sb3.wrappers.atari import AtariWrapper
+from lit_sb3.wrappers.atari.atari_wrapper import AtariWrapper
 from lit_sb3.wrappers.monitor import Monitor
 
 
@@ -47,7 +47,7 @@ def make_vec_env(
     n_envs: int = 1,
     seed: int | None = None,
     start_index: int = 0,
-    monitor_dir: str | None = None,
+    monitor_dir: str | Path | None = None,
     wrapper_class: Callable[[gym.Env], gym.Env] | None = None,
     env_kwargs: dict[str, Any] | None = None,
     vec_env_cls: type[DummyVecEnv | SubprocVecEnv] | None = None,
@@ -142,7 +142,7 @@ def make_atari_env(
     n_envs: int = 1,
     seed: int | None = None,
     start_index: int = 0,
-    monitor_dir: str | None = None,
+    monitor_dir: str | Path | None = None,
     wrapper_kwargs: dict[str, Any] | None = None,
     env_kwargs: dict[str, Any] | None = None,
     vec_env_cls: type[DummyVecEnv] | type[SubprocVecEnv] | None = None,

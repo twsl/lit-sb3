@@ -1,12 +1,11 @@
-"""Helpers for dealing with vectorized environments.
-"""
+"""Helpers for dealing with vectorized environments."""
 
 from typing import Any
 
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.common.preprocessing import check_for_nested_spaces
+from lit_sb3.core.preprocessing import check_for_nested_spaces
 from lit_sb3.vec_env.base_vec_env import VecEnvObs
 
 

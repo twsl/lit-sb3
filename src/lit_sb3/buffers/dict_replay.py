@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from lit_sb3.buffers.replay import ReplayBuffer
-from lit_sb3.common.types import DictReplayBufferSamples
+from lit_sb3.core.types import DictReplayBufferSamples
 from lit_sb3.vec_env import VecNormalize
 
 try:

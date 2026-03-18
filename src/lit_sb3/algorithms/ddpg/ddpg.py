@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
 import torch
@@ -5,8 +6,8 @@ import torch
 from lit_sb3.algorithms.td3.policies import TD3Policy
 from lit_sb3.algorithms.td3.td3 import TD3
 from lit_sb3.buffers import ReplayBuffer
-from lit_sb3.common.noise import ActionNoise
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.noise import ActionNoise
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
 
 SelfDDPG = TypeVar("SelfDDPG", bound="DDPG")
 
@@ -71,7 +72,7 @@ class DDPG(TD3):
         replay_buffer_kwargs: dict[str, Any] | None = None,
         optimize_memory_usage: bool = False,
         n_steps: int = 1,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -118,7 +119,7 @@ class DDPG(TD3):
         self: SelfDDPG,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 4,
+        log_every_n_steps: int | None = 4,
         tb_log_name: str = "DDPG",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -126,7 +127,7 @@ class DDPG(TD3):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

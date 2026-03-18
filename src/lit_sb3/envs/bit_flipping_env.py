@@ -5,7 +5,7 @@ from gymnasium import Env, spaces
 from gymnasium.envs.registration import EnvSpec
 import numpy as np
 
-from lit_sb3.common.types import GymStepReturn
+from lit_sb3.core.types import GymStepReturn
 
 
 class BitFlippingEnv(Env):

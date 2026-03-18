@@ -4,7 +4,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.common.types import GymStepReturn
+from lit_sb3.core.types import GymStepReturn
 
 T = TypeVar("T", int, np.ndarray)
 

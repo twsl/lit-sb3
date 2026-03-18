@@ -67,8 +67,12 @@ class MaskableRolloutBuffer(RolloutBuffer):
         super().reset()
 
     def add(self, *args, action_masks: np.ndarray | None = None, **kwargs) -> None:
-        """Args:
-        action_masks: Masks applied to constrain the choice of possible actions.
+        """Add transition to buffer.
+
+        Args:
+            *args: Positional arguments forwarded to parent ``add``.
+            action_masks: Masks applied to constrain the choice of possible actions.
+            **kwargs: Keyword arguments forwarded to parent ``add``.
         """
         if action_masks is not None:
             self.action_masks[self.pos] = action_masks.reshape((self.n_envs, self.mask_dims))

@@ -1,10 +1,11 @@
+from pathlib import Path
+
 """Unit tests for the Monitor wrapper.
 
 Adapted from HenryJia/lightning-baselines3 tests/common/test_monitor.py.
 """
 
 import json
-import os
 import uuid
 
 import gymnasium as gym
@@ -16,7 +17,7 @@ from lit_sb3.wrappers.monitor import Monitor, get_monitor_files, load_results
 def test_monitor(tmp_path):
     """Test the Monitor wrapper records steps, rewards, and episode metadata."""
     env = gym.make("CartPole-v1")
-    monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+    monitor_file = tmp_path / f"stable_baselines-test-{uuid.uuid4()}.monitor.csv"
     monitor_env = Monitor(env, monitor_file)
     monitor_env.reset()
     total_steps = 1000
@@ -38,7 +39,7 @@ def test_monitor(tmp_path):
     assert sum(monitor_env.get_episode_rewards()) == sum(ep_rewards)
     _ = monitor_env.get_episode_times()
 
-    with open(monitor_file) as file_handler:
+    with Path(monitor_file).open() as file_handler:
         first_line = file_handler.readline()
         assert first_line.startswith("#")
         metadata = json.loads(first_line[1:])
@@ -47,19 +48,18 @@ def test_monitor(tmp_path):
 
         last_logline = pandas.read_csv(file_handler, index_col=None)
         assert set(last_logline.keys()) == {"l", "t", "r"}, "Incorrect keys in monitor logline"
-    os.remove(monitor_file)
+    Path(monitor_file).unlink()
 
 
 def test_monitor_load_results(tmp_path):
     """Test load_results on log files produced by the Monitor wrapper."""
-    tmp_path = str(tmp_path)
     env1 = gym.make("CartPole-v1")
-    monitor_file1 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
-    monitor_env1 = Monitor(env1, monitor_file1)
+    monitor_file1 = tmp_path / f"stable_baselines-test-{uuid.uuid4()}.monitor.csv"
+    monitor_env1 = Monitor(env1, str(monitor_file1))
 
     monitor_files = get_monitor_files(tmp_path)
     assert len(monitor_files) == 1
-    assert monitor_file1 in monitor_files
+    assert str(monitor_file1) in monitor_files
 
     monitor_env1.reset()
     episode_count1 = 0
@@ -73,13 +73,13 @@ def test_monitor_load_results(tmp_path):
     assert results_size1 == episode_count1
 
     env2 = gym.make("CartPole-v1")
-    monitor_file2 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
-    monitor_env2 = Monitor(env2, monitor_file2)
+    monitor_file2 = tmp_path / f"stable_baselines-test-{uuid.uuid4()}.monitor.csv"
+    monitor_env2 = Monitor(env2, str(monitor_file2))
 
     monitor_files = get_monitor_files(tmp_path)
     assert len(monitor_files) == 2
-    assert monitor_file1 in monitor_files
-    assert monitor_file2 in monitor_files
+    assert str(monitor_file1) in monitor_files
+    assert str(monitor_file2) in monitor_files
 
     monitor_env2.reset()
     episode_count2 = 0
@@ -92,5 +92,5 @@ def test_monitor_load_results(tmp_path):
     results_size2 = len(load_results(tmp_path).index)
     assert results_size2 == (results_size1 + episode_count2)
 
-    os.remove(monitor_file1)
-    os.remove(monitor_file2)
+    Path(monitor_file1).unlink()
+    Path(monitor_file2).unlink()

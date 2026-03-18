@@ -7,7 +7,7 @@ import warnings
 import gymnasium as gym
 import numpy as np
 
-from lit_sb3.common.evaluation import evaluate_policy
+from lit_sb3.core.evaluation import evaluate_policy
 from lit_sb3.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 
 from .base import BaseCallback, EventCallback
@@ -51,8 +51,8 @@ class EvalCallback(EventCallback):
         callback_after_eval: BaseCallback | None = None,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
-        log_path: str | None = None,
-        best_model_save_path: str | None = None,
+        log_path: str | Path | None = None,
+        best_model_save_path: str | Path | None = None,
         deterministic: bool = True,
         render: bool = False,
         verbose: int = 1,

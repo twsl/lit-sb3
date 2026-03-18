@@ -7,8 +7,7 @@ from lit_sb3.envs.identity_env import IdentityEnv
 
 
 class InvalidActionEnvDiscrete(IdentityEnv[int]):
-    """Identity env with a discrete action space. Supports action masking.
-    """
+    """Identity env with a discrete action space. Supports action masking."""
 
     def __init__(
         self,
@@ -39,8 +38,7 @@ class InvalidActionEnvDiscrete(IdentityEnv[int]):
 
 
 class InvalidActionEnvMultiDiscrete(IdentityEnv[np.ndarray]):
-    """Identity env with a multidiscrete action space. Supports action masking.
-    """
+    """Identity env with a multidiscrete action space. Supports action masking."""
 
     action_space: spaces.MultiDiscrete
 
@@ -84,8 +82,7 @@ class InvalidActionEnvMultiDiscrete(IdentityEnv[np.ndarray]):
 
 
 class InvalidActionEnvMultiBinary(IdentityEnv[np.ndarray]):
-    """Identity env with a multibinary action space. Supports action masking.
-    """
+    """Identity env with a multibinary action space. Supports action masking."""
 
     def __init__(
         self,

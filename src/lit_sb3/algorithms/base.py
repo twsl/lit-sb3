@@ -13,17 +13,17 @@ import warnings
 
 import gymnasium as gym
 from gymnasium import spaces
-import lightning as L
+import lightning as L  # noqa: N812
 from lightning import LightningModule
 import numpy as np
 import torch
 
 from lit_sb3.callbacks import BaseCallback, CallbackList, ConvertCallback, ProgressBarCallback
-from lit_sb3.common import utils
-from lit_sb3.common.noise import ActionNoise
-from lit_sb3.common.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule, TensorDict
-from lit_sb3.common.utils import (
+from lit_sb3.core import utils
+from lit_sb3.core.noise import ActionNoise
+from lit_sb3.core.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule, TensorDict
+from lit_sb3.core.utils import (
     FloatSchedule,
     check_for_correct_spaces,
     get_device,
@@ -123,7 +123,7 @@ class BaseAlgorithm(LightningModule):
         learning_rate: float | Schedule,
         policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | pathlib.Path | None = None,
         verbose: int = 0,
         device: torch.device | str = "auto",
         support_multi_env: bool = False,
@@ -576,26 +576,80 @@ class BaseAlgorithm(LightningModule):
         self.n_envs = env.num_envs
         self.env = env
 
+    # ------------------------------------------------------------------
+    # RLTrainer protocol — implemented by OnPolicyAlgorithm / OffPolicyAlgorithm
+    # ------------------------------------------------------------------
+
+    @property
+    @abstractmethod
+    def _default_log_every_n_steps(self) -> int:
+        """Default ``log_every_n_steps`` used when the caller doesn't supply one."""
+
+    @abstractmethod
+    def _prepare_fit(
+        self,
+        callback: BaseCallback,
+        log_every_n_steps: int,
+    ) -> None:
+        """Inject per-algorithm state required by Lightning hooks.
+
+        Called by :class:`~lit_sb3.trainer.RLTrainer` (and the ``learn()`` shim)
+        after ``_setup_learn`` and before ``L.Trainer.fit``.
+
+        Args:
+            callback: Already-initialised callback returned by ``_setup_learn``.
+            log_every_n_steps: Resolved logging frequency (caller's value or
+                ``_default_log_every_n_steps``).
+        """
+
+    @abstractmethod
+    def _rl_max_epochs(self, total_timesteps: int) -> int:
+        """Return the ``max_epochs`` value for ``L.Trainer``.
+
+        On-policy: ``ceil(total_timesteps / (n_steps * n_envs))``.
+        Off-policy: ``1`` (single epoch driven by ``ReplayBufferDataset``).
+
+        Args:
+            total_timesteps: Effective total timesteps.
+        """
+
+    def _pre_fit_hook(self, callback: BaseCallback) -> None:
+        """Algorithm-specific work executed after ``on_training_start`` but before ``L.Trainer.fit``.
+
+        Default: no-op.  On-policy algorithms override this to pre-collect the
+        first rollout so Lightning's ``setup_data()`` prefetch finds a populated
+        buffer.
+
+        Args:
+            callback: The active training callback.
+        """
+
+    # ------------------------------------------------------------------
+
     @abstractmethod
     def learn(
         self: SelfBaseAlgorithm,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 100,
+        log_every_n_steps: int | None = None,
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfBaseAlgorithm:
         """Return a trained model.
 
+        Delegates to :class:`~lit_sb3.trainer.RLTrainer` for backwards
+        compatibility.  Prefer constructing ``RLTrainer`` explicitly for full
+        control over Lightning Trainer settings.
+
         Args:
             total_timesteps: The total number of samples (env steps) to train on
                 Note: it is a lower bound, see `issue #1150 <https://github.com/DLR-RM/stable-baselines3/issues/1150>`_
             callback: callback(s) called at every step with state of the algorithm.
-            log_interval: for on-policy algos (e.g., PPO, A2C, ...) this is the number of
-                training iterations (i.e., log_interval * n_steps * n_envs timesteps) before logging;
-                for off-policy algos (e.g., TD3, SAC, ...) this is the number of episodes before
-                logging.
+            log_every_n_steps: How often to emit SB3 stats. For on-policy algos
+                (PPO, A2C, …) this is the number of rollout cycles; for off-policy
+                algos (SAC, TD3, …) it is the number of episodes.  ``None`` uses the
+                algorithm's default.
             tb_log_name: the name of the run for TensorBoard logging
             reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
             progress_bar: Display a progress bar using tqdm and rich.

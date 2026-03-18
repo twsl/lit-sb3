@@ -3,11 +3,11 @@ from gymnasium import spaces
 import numpy as np
 
 try:
-    import cv2
+    import cv2  # ty:ignore[unresolved-import]
 
     cv2.ocl.setUseOpenCL(False)
 except ImportError:
-    cv2 = None  # type: ignore[assignment]
+    cv2 = None
 
 
 class WarpFrame(gym.ObservationWrapper[np.ndarray, int, np.ndarray]):

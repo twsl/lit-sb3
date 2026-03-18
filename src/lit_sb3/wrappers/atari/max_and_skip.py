@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from lit_sb3.common.types import AtariStepReturn
+from lit_sb3.core.types import AtariStepReturn
 
 
 class MaxAndSkipEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):

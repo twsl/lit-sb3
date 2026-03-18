@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 import warnings
 
@@ -9,8 +10,8 @@ from torch.nn import functional as F  # noqa: N812
 from lit_sb3.algorithms.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy, QNetwork
 from lit_sb3.algorithms.off_policy import OffPolicyAlgorithm
 from lit_sb3.buffers import ReplayBuffer
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.common.utils import LinearSchedule, get_parameters_by_name, polyak_update
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.utils import LinearSchedule, get_parameters_by_name, polyak_update
 from lit_sb3.policies import BasePolicy
 
 SelfDQN = TypeVar("SelfDQN", bound="DQN")
@@ -96,7 +97,7 @@ class DQN(OffPolicyAlgorithm):
         exploration_final_eps: float = 0.05,
         max_grad_norm: float = 10,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -282,7 +283,7 @@ class DQN(OffPolicyAlgorithm):
         self: SelfDQN,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 4,
+        log_every_n_steps: int | None = 4,
         tb_log_name: str = "DQN",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -290,7 +291,7 @@ class DQN(OffPolicyAlgorithm):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

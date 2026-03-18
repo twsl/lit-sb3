@@ -1,6 +1,6 @@
 from typing import Any
 
-from .base import EventCallback
+from .base import BaseCallback, EventCallback
 from .convert import ConvertCallback
 
 
@@ -13,7 +13,7 @@ class EveryNTimesteps(EventCallback):
             when the event is triggered.
     """
 
-    def __init__(self, n_steps: int, callback: "EventCallback"):
+    def __init__(self, n_steps: int, callback: "BaseCallback"):
         super().__init__(callback)
         self.n_steps = n_steps
         self.last_time_trigger = 0

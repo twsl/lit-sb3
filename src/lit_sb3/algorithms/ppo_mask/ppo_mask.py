@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 
 from gymnasium import spaces
@@ -8,12 +9,13 @@ from torch.nn import functional as F  # noqa: N812
 from lit_sb3.algorithms.on_policy import OnPolicyAlgorithm
 from lit_sb3.algorithms.ppo_mask.policies import CnnPolicy, MlpPolicy, MultiInputPolicy
 from lit_sb3.buffers import RolloutBuffer
-from lit_sb3.buffers.maskable import MaskableDictRolloutBuffer, MaskableRolloutBuffer
+from lit_sb3.buffers.maskable.dict_rollout import MaskableDictRolloutBuffer
+from lit_sb3.buffers.maskable.rollout import MaskableRolloutBuffer
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.common.utils import FloatSchedule, explained_variance, obs_as_tensor
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.utils import FloatSchedule, explained_variance, obs_as_tensor
 from lit_sb3.policies import BasePolicy
-from lit_sb3.policies.maskable import MaskableActorCriticPolicy
+from lit_sb3.policies.maskable.actor_critic import MaskableActorCriticPolicy
 from lit_sb3.utils.maskable import get_action_masks, is_masking_supported
 from lit_sb3.vec_env import VecEnv
 
@@ -93,7 +95,7 @@ class MaskablePPO(OnPolicyAlgorithm):
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         target_kl: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -401,7 +403,7 @@ class MaskablePPO(OnPolicyAlgorithm):
         self: SelfMaskablePPO,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
+        log_every_n_steps: int | None = 1,
         tb_log_name: str = "MaskablePPO",
         reset_num_timesteps: bool = True,
         use_masking: bool = True,
@@ -412,7 +414,7 @@ class MaskablePPO(OnPolicyAlgorithm):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

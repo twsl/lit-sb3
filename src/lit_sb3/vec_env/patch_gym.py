@@ -51,7 +51,8 @@ def _patch_env(env: Union["gym.Env", gymnasium.Env]) -> gymnasium.Env:  # pragma
         "You provided an OpenAI Gym environment. "
         "We strongly recommend transitioning to Gymnasium environments. "
         "Stable-Baselines3 is automatically wrapping your environments in a compatibility "
-        "layer, which could potentially cause issues.", stacklevel=2
+        "layer, which could potentially cause issues.",
+        stacklevel=2,
     )
 
     if "seed" in signature(env.unwrapped.reset).parameters:
@@ -99,7 +100,8 @@ def _convert_space(space: Union["gym.Space", gymnasium.Space]) -> gymnasium.Spac
 
     warnings.warn(
         "You loaded a model that was trained using OpenAI Gym. "
-        "We strongly recommend transitioning to Gymnasium by saving that model again.", stacklevel=2
+        "We strongly recommend transitioning to Gymnasium by saving that model again.",
+        stacklevel=2,
     )
 
     return shimmy.openai_gym_compatibility._convert_space(space)

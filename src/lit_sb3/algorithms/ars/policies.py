@@ -4,8 +4,8 @@ from gymnasium import spaces
 import torch
 from torch import nn
 
-from lit_sb3.common.preprocessing import get_action_dim
-from lit_sb3.common.types import PyTorchObs
+from lit_sb3.core.preprocessing import get_action_dim
+from lit_sb3.core.types import PyTorchObs
 from lit_sb3.modules import create_mlp
 from lit_sb3.policies import BasePolicy
 

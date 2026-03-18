@@ -21,9 +21,7 @@ class VecFrameStack(VecEnvWrapper):
             spaces
     """
 
-    def __init__(
-        self, venv: VecEnv, n_stack: int, channels_order: str | Mapping[str, str] | None = None
-    ) -> None:
+    def __init__(self, venv: VecEnv, n_stack: int, channels_order: str | Mapping[str, str] | None = None) -> None:
         assert isinstance(venv.observation_space, (spaces.Box, spaces.Dict)), (
             "VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces"
         )
@@ -45,8 +43,7 @@ class VecFrameStack(VecEnvWrapper):
         return observations, rewards, dones, infos
 
     def reset(self) -> np.ndarray | dict[str, np.ndarray]:
-        """Reset all environments.
-        """
+        """Reset all environments."""
         observation = self.venv.reset()
         observation = self.stacked_obs.reset(observation)
         return observation

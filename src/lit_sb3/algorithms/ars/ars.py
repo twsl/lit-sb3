@@ -1,5 +1,6 @@
 import copy
 from functools import partial
+from pathlib import Path
 import sys
 import time
 from typing import Any, ClassVar, Optional, TypeVar, Union
@@ -13,9 +14,9 @@ import torch.nn.utils
 from lit_sb3.algorithms.ars.policies import ARSPolicy, LinearPolicy, MlpPolicy
 from lit_sb3.algorithms.base import BaseAlgorithm
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.evaluation import evaluate_policy
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.common.utils import FloatSchedule, safe_mean
+from lit_sb3.core.evaluation import evaluate_policy
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.utils import FloatSchedule, safe_mean
 from lit_sb3.policies import BasePolicy
 from lit_sb3.utils.save_util import load_from_zip_file
 from lit_sb3.vec_env.async_eval import AsyncEval
@@ -68,7 +69,7 @@ class ARS(BaseAlgorithm):
         n_eval_episodes: int = 1,
         policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         seed: int | None = None,
         verbose: int = 0,
         device: torch.device | str = "cpu",
@@ -309,7 +310,7 @@ class ARS(BaseAlgorithm):
         self: SelfARS,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
+        log_every_n_steps: int | None = 1,
         tb_log_name: str = "ARS",
         reset_num_timesteps: bool = True,
         async_eval: AsyncEval | None = None,
@@ -320,7 +321,7 @@ class ARS(BaseAlgorithm):
         Args:
             total_timesteps: The total number of samples (env steps) to train on
             callback: callback(s) called at every step with state of the algorithm.
-            log_interval: The number of timesteps before logging.
+            log_every_n_steps: The number of timesteps before logging.
             tb_log_name: the name of the run for TensorBoard logging
             reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
             async_eval: The object for asynchronous evaluation of candidates.
@@ -342,7 +343,7 @@ class ARS(BaseAlgorithm):
         while self.num_timesteps < total_steps:
             self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
             self._do_one_update(callback, async_eval)
-            if log_interval is not None and self._n_updates % log_interval == 0:
+            if log_every_n_steps is not None and self._n_updates % log_every_n_steps == 0:
                 self.dump_logs()
 
         if async_eval is not None:

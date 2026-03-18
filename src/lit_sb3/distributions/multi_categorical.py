@@ -21,6 +21,7 @@ class MultiCategoricalDistribution(Distribution):
     def __init__(self, action_dims: list[int]):
         super().__init__()
         self.action_dims = action_dims
+        self.distribution: list[Categorical] = []
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
         """Create the layer that represents the distribution.
@@ -49,18 +50,18 @@ class MultiCategoricalDistribution(Distribution):
             [
                 dist.log_prob(action)
                 for dist, action in zip(self.distribution, torch.unbind(actions, dim=1), strict=False)
-            ],  # ty:ignore[invalid-argument-type]
+            ],
             dim=1,
         ).sum(dim=1)
 
     def entropy(self) -> torch.Tensor:
-        return torch.stack([dist.entropy() for dist in self.distribution], dim=1).sum(dim=1)  # ty:ignore[not-iterable]
+        return torch.stack([dist.entropy() for dist in self.distribution], dim=1).sum(dim=1)
 
     def sample(self) -> torch.Tensor:
-        return torch.stack([dist.sample() for dist in self.distribution], dim=1)  # ty:ignore[not-iterable]
+        return torch.stack([dist.sample() for dist in self.distribution], dim=1)
 
     def mode(self) -> torch.Tensor:
-        return torch.stack([torch.argmax(dist.probs, dim=1) for dist in self.distribution], dim=1)  # ty:ignore[invalid-argument-type, not-iterable]
+        return torch.stack([torch.argmax(dist.probs, dim=1) for dist in self.distribution], dim=1)  # ty:ignore[invalid-argument-type]
 
     def actions_from_params(self, action_logits: torch.Tensor, deterministic: bool = False) -> torch.Tensor:
         # Update the proba distribution

@@ -10,7 +10,7 @@ from gymnasium import spaces
 import numpy as np
 import pytest
 
-from lit_sb3.common.running_mean_std import RunningMeanStd
+from lit_sb3.core.running_mean_std import RunningMeanStd
 from lit_sb3.envs.identity_env import FakeImageEnv
 from lit_sb3.vec_env import DummyVecEnv, VecFrameStack, VecNormalize, sync_envs_normalization, unwrap_vec_normalize
 from lit_sb3.wrappers.monitor import Monitor
@@ -77,7 +77,7 @@ def allclose(obs_1, obs_2):
     """Generalized np.allclose() to work with dict spaces."""
     if isinstance(obs_1, dict):
         all_close = True
-        for key in obs_1.keys():
+        for key in obs_1:
             if not np.allclose(obs_1[key], obs_2[key]):
                 all_close = False
                 break
@@ -99,7 +99,7 @@ def make_image_env():
 
 def check_rms_equal(rmsa, rmsb):
     if isinstance(rmsa, dict):
-        for key in rmsa.keys():
+        for key in rmsa:
             assert np.all(rmsa[key].mean == rmsb[key].mean)
             assert np.all(rmsa[key].var == rmsb[key].var)
             assert np.all(rmsa[key].count == rmsb[key].count)
@@ -133,7 +133,7 @@ def _make_warmstart(env_fn, **kwargs):
     venv.get_original_obs()
     for _ in range(100):
         actions = [venv.action_space.sample()]
-        venv.step(actions)
+        venv.step(actions)  # ty:ignore[invalid-argument-type]
     return venv
 
 
@@ -196,19 +196,19 @@ def test_combining_stats():
 
 def test_obs_rms_vec_normalize():
     env_fns = [lambda: DummyRewardEnv(0), lambda: DummyRewardEnv(1)]
-    env = DummyVecEnv(env_fns)
+    env = DummyVecEnv(env_fns)  # ty:ignore[invalid-argument-type]
     env = VecNormalize(env)
     env.reset()
-    assert np.allclose(env.obs_rms.mean, 0.5, atol=1e-4)
+    assert np.allclose(env.obs_rms.mean, 0.5, atol=1e-4)  # ty:ignore[unresolved-attribute]
     assert np.allclose(env.ret_rms.mean, 0.0, atol=1e-4)
-    env.step([env.action_space.sample() for _ in range(len(env_fns))])
-    assert np.allclose(env.obs_rms.mean, 1.25, atol=1e-4)
+    env.step([env.action_space.sample() for _ in range(len(env_fns))])  # ty:ignore[invalid-argument-type]
+    assert np.allclose(env.obs_rms.mean, 1.25, atol=1e-4)  # ty:ignore[unresolved-attribute]
     assert np.allclose(env.ret_rms.mean, 2, atol=1e-4)
 
     # Check convergence to true mean
     for _ in range(3000):
-        env.step([env.action_space.sample() for _ in range(len(env_fns))])
-    assert np.allclose(env.obs_rms.mean, 2.0, atol=1e-3)
+        env.step([env.action_space.sample() for _ in range(len(env_fns))])  # ty:ignore[invalid-argument-type]
+    assert np.allclose(env.obs_rms.mean, 2.0, atol=1e-3)  # ty:ignore[unresolved-attribute]
 
 
 @pytest.mark.parametrize("make_gym_env", [make_env, make_dict_env, make_image_env])
@@ -223,9 +223,9 @@ def test_vec_env(tmp_path, make_gym_env):
     _, done = norm_venv.reset(), [False]
     while not done[0]:
         actions = [norm_venv.action_space.sample()]
-        obs, rew, done, _ = norm_venv.step(actions)
+        obs, rew, done, _ = norm_venv.step(actions)  # ty:ignore[invalid-argument-type]
         if isinstance(obs, dict):
-            for key in obs.keys():
+            for key in obs:
                 assert np.max(np.abs(obs[key])) <= clip_obs
         else:
             assert np.max(np.abs(obs)) <= clip_obs
@@ -265,7 +265,7 @@ def test_get_original_dict():
         rewards = rewards[0]
         orig_rewards = venv.get_original_reward()[0]
 
-        for key in orig_obs.keys():
+        for key in orig_obs:
             assert orig_obs[key].shape == obs[key].shape
         assert orig_rewards.dtype == rewards.dtype
         assert not allclose(orig_obs, obs)
@@ -322,10 +322,10 @@ def test_sync_vec_normalize(make_env):
     env.reset()
     latest_reward = None
     for _ in range(100):
-        _, latest_reward, _, _ = env.step([env.action_space.sample()])
+        _, latest_reward, _, _ = env.step([env.action_space.sample()])  # ty:ignore[invalid-argument-type]
 
     original_latest_reward = env.get_original_reward()
-    assert np.allclose(original_latest_reward, env.unnormalize_reward(latest_reward))
+    assert np.allclose(original_latest_reward, env.unnormalize_reward(latest_reward))  # ty:ignore[invalid-argument-type]
 
     obs = env.reset()
     dummy_rewards = np.random.rand(10)
@@ -342,7 +342,7 @@ def test_sync_vec_normalize(make_env):
     eval_env = DummyVecEnv([make_env])
     eval_env = VecNormalize(eval_env, training=False, norm_obs=False, norm_reward=False)
     env.reset()
-    env.step([env.action_space.sample()])
+    env.step([env.action_space.sample()])  # ty:ignore[invalid-argument-type]
     assert not np.allclose(env.ret_rms.mean, eval_env.ret_rms.mean)
     sync_envs_normalization(env, eval_env)
     assert np.allclose(env.ret_rms.mean, eval_env.ret_rms.mean)

@@ -1,5 +1,6 @@
 import copy
 from functools import partial
+from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 import warnings
 
@@ -12,8 +13,8 @@ from torch.nn import functional as F  # noqa: N812
 from lit_sb3.algorithms.on_policy import OnPolicyAlgorithm
 from lit_sb3.algorithms.trpo.policies import CnnPolicy, MlpPolicy, MultiInputPolicy
 from lit_sb3.buffers import RolloutBuffer
-from lit_sb3.common.types import GymEnv, MaybeCallback, RolloutBufferSamples, Schedule
-from lit_sb3.common.utils import conjugate_gradient_solver, explained_variance, flat_grad
+from lit_sb3.core.types import GymEnv, MaybeCallback, RolloutBufferSamples, Schedule
+from lit_sb3.core.utils import conjugate_gradient_solver, explained_variance, flat_grad
 from lit_sb3.distributions import kl_divergence
 from lit_sb3.policies import ActorCriticPolicy, BasePolicy
 
@@ -57,7 +58,7 @@ class TRPO(OnPolicyAlgorithm):
         target_kl: float = 0.01,
         sub_sampling_factor: int = 1,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -316,7 +317,7 @@ class TRPO(OnPolicyAlgorithm):
         self: SelfTRPO,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
+        log_every_n_steps: int | None = 1,
         tb_log_name: str = "TRPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -324,7 +325,7 @@ class TRPO(OnPolicyAlgorithm):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

@@ -18,8 +18,8 @@ import cloudpickle
 import torch
 
 import lit_sb3
-from lit_sb3.common.types import TensorDict
-from lit_sb3.common.utils import get_device, get_system_info
+from lit_sb3.core.types import TensorDict
+from lit_sb3.core.utils import get_device, get_system_info
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:

@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 import warnings
 
@@ -8,8 +9,8 @@ import torch
 from lit_sb3.algorithms.off_policy import OffPolicyAlgorithm
 from lit_sb3.algorithms.qrdqn.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, QRDQNPolicy, QuantileNetwork
 from lit_sb3.buffers import ReplayBuffer
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.common.utils import LinearSchedule, get_parameters_by_name, polyak_update, quantile_huber_loss
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.utils import LinearSchedule, get_parameters_by_name, polyak_update, quantile_huber_loss
 from lit_sb3.policies import BasePolicy
 
 SelfQRDQN = TypeVar("SelfQRDQN", bound="QRDQN")
@@ -55,7 +56,7 @@ class QRDQN(OffPolicyAlgorithm):
         exploration_final_eps: float = 0.01,
         max_grad_norm: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -223,7 +224,7 @@ class QRDQN(OffPolicyAlgorithm):
         self: SelfQRDQN,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 4,
+        log_every_n_steps: int | None = 4,
         tb_log_name: str = "QRDQN",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -231,7 +232,7 @@ class QRDQN(OffPolicyAlgorithm):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

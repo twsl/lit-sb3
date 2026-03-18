@@ -13,13 +13,13 @@ calls ``Trainer.fit(self)``, so the public SB3 API is fully preserved.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 import sys
 import time
 from typing import Any, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
-import lightning as L  # noqa: N812
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -27,8 +27,8 @@ from torch.utils.data import DataLoader
 from lit_sb3.algorithms.base import BaseAlgorithm
 from lit_sb3.buffers import DictRolloutBuffer, RolloutBuffer
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.common.utils import obs_as_tensor, safe_mean
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.utils import obs_as_tensor, safe_mean
 from lit_sb3.data import RolloutDataset
 from lit_sb3.policies import ActorCriticPolicy
 from lit_sb3.vec_env import VecEnv
@@ -86,7 +86,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         rollout_buffer_class: type[RolloutBuffer] | None = None,
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         monitor_wrapper: bool = True,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
@@ -333,46 +333,33 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         return True
 
     # ------------------------------------------------------------------
-    # SB3-compatible learn() — wraps Lightning Trainer
+    # RLTrainer protocol
     # ------------------------------------------------------------------
 
-    def learn(
-        self: SelfOnPolicyAlgorithm,
-        total_timesteps: int,
-        callback: MaybeCallback = None,
-        log_interval: int = 1,
-        tb_log_name: str = "OnPolicyAlgorithm",
-        reset_num_timesteps: bool = True,
-        progress_bar: bool = False,
-    ) -> SelfOnPolicyAlgorithm:
-        """Train for ``total_timesteps`` environment steps using Lightning Trainer.
+    @property
+    def _default_log_every_n_steps(self) -> int:
+        return 1
 
-        The number of Lightning epochs equals
-        ``ceil(total_timesteps / (n_steps * n_envs))``.
-        """
-        total_timesteps, callback = self._setup_learn(
-            total_timesteps,
-            callback,
-            reset_num_timesteps,
-            tb_log_name,
-            progress_bar,
-        )
-
-        # Store RL-specific state needed by Lightning hooks
+    def _prepare_fit(
+        self,
+        callback: BaseCallback,
+        log_every_n_steps: int,
+    ) -> None:
+        """Inject on-policy state needed by Lightning hooks."""
         self._rl_callback = callback
         self._rl_iteration = 0
-        self._log_interval = log_interval
+        self._log_interval = log_every_n_steps
         # Allow subclasses to set batch_size/n_epochs in __init__; fall back to defaults.
         if not hasattr(self, "_rl_batch_size"):
             self._rl_batch_size = None
         if not hasattr(self, "_rl_n_epochs"):
             self._rl_n_epochs = 1
 
-        n_rollout_cycles = max(1, math.ceil(total_timesteps / (self.n_steps * self.n_envs)))
+    def _rl_max_epochs(self, total_timesteps: int) -> int:
+        return max(1, math.ceil(total_timesteps / (self.n_steps * self.n_envs)))
 
-        # Pre-collect the first rollout so Lightning's setup_data() prefetch
-        # finds a fully populated rollout buffer.
-        callback.on_training_start(locals(), globals())
+    def _pre_fit_hook(self, callback: BaseCallback) -> None:
+        """Pre-collect the first rollout so Lightning's setup_data() prefetch finds a fully populated rollout buffer."""
         self.collect_rollouts(
             self.env,  # ty:ignore[invalid-argument-type]
             callback,
@@ -381,21 +368,37 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         )
         self._skip_next_collection = True  # on_train_epoch_start skips for epoch 1
 
-        trainer = L.Trainer(
-            max_epochs=n_rollout_cycles,
-            enable_progress_bar=progress_bar,
-            enable_model_summary=False,
-            enable_checkpointing=False,
-            logger=False,
-            # Disable Lightning's automatic device management — we handle it ourselves
-            accelerator="cpu" if self.device == torch.device("cpu") else "gpu",
-            devices=1,
-            callbacks=[callback],
-        )
+    # ------------------------------------------------------------------
+    # SB3-compatible learn() — delegates to RLTrainer
+    # ------------------------------------------------------------------
 
-        trainer.fit(self)
-        # on_train_end() calls callback.on_training_end()
-        return self
+    def learn(
+        self: SelfOnPolicyAlgorithm,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_every_n_steps: int | None = None,
+        tb_log_name: str = "OnPolicyAlgorithm",
+        reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
+    ) -> SelfOnPolicyAlgorithm:
+        """Train for ``total_timesteps`` environment steps.
+
+        Delegates to :class:`~lit_sb3.trainer.RLTrainer`.  For full control
+        over Lightning Trainer settings (precision, loggers, plugins …) construct
+        ``RLTrainer`` directly::
+
+            RLTrainer(max_steps=total_timesteps, ...).fit(model)
+        """
+        from lit_sb3.trainer import RLTrainer
+
+        return RLTrainer(  # type: ignore[return-value]
+            max_steps=total_timesteps,
+            rl_callback=callback,
+            log_every_n_steps=log_every_n_steps,
+            tb_log_name=tb_log_name,
+            reset_num_timesteps=reset_num_timesteps,
+            enable_progress_bar=progress_bar,
+        ).fit(self)
 
     def dump_logs(self, iteration: int = 0) -> None:
         """Write log data (kept for SB3 API compatibility)."""

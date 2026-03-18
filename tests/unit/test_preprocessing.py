@@ -6,7 +6,7 @@ Adapted from stable-baselines3 tests/test_preprocessing.py.
 from gymnasium import spaces
 import torch
 
-from lit_sb3.common.preprocessing import get_obs_shape, preprocess_obs
+from lit_sb3.core.preprocessing import get_obs_shape, preprocess_obs
 
 
 def test_get_obs_shape_discrete():

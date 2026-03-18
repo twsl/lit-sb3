@@ -1,8 +1,6 @@
-from lit_sb3.policies.maskable import (
-    MaskableActorCriticCnnPolicy,
-    MaskableActorCriticPolicy,
-    MaskableMultiInputActorCriticPolicy,
-)
+from lit_sb3.policies.maskable.actor_critic import MaskableActorCriticPolicy
+from lit_sb3.policies.maskable.actor_critic_cnn import MaskableActorCriticCnnPolicy
+from lit_sb3.policies.maskable.multi_input_actor_critic import MaskableMultiInputActorCriticPolicy
 
 MlpPolicy = MaskableActorCriticPolicy
 CnnPolicy = MaskableActorCriticCnnPolicy

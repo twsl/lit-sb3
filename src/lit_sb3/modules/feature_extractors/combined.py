@@ -2,8 +2,8 @@ from gymnasium import spaces
 import torch
 from torch import nn
 
-from lit_sb3.common.preprocessing import get_flattened_obs_dim, is_image_space
-from lit_sb3.common.types import TensorDict
+from lit_sb3.core.preprocessing import get_flattened_obs_dim, is_image_space
+from lit_sb3.core.types import TensorDict
 from lit_sb3.modules.feature_extractors.base import BaseFeaturesExtractor
 from lit_sb3.modules.feature_extractors.nature_cnn import NatureCNN
 

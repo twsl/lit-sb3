@@ -7,7 +7,7 @@ import torch
 
 from lit_sb3.buffers.dict_rollout import DictRolloutBuffer
 from lit_sb3.buffers.recurrent.utils import create_sequencers
-from lit_sb3.common.types import RNNStates, TensorDict
+from lit_sb3.core.types import RNNStates, TensorDict
 from lit_sb3.vec_env import VecNormalize
 
 

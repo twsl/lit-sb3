@@ -6,8 +6,8 @@ from typing import Optional, Union
 import numpy as np
 import torch
 
-from lit_sb3.common.evaluation import evaluate_policy
-from lit_sb3.common.running_mean_std import RunningMeanStd
+from lit_sb3.core.evaluation import evaluate_policy
+from lit_sb3.core.running_mean_std import RunningMeanStd
 from lit_sb3.policies import BasePolicy
 from lit_sb3.vec_env import VecEnv, unwrap_vec_normalize
 from lit_sb3.vec_env.base_vec_env import CloudpickleWrapper

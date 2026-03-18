@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 
 from gymnasium import spaces
@@ -8,12 +9,13 @@ import torch
 from lit_sb3.algorithms.on_policy import OnPolicyAlgorithm
 from lit_sb3.algorithms.ppo_recurrent.policies import CnnLstmPolicy, MlpLstmPolicy, MultiInputLstmPolicy
 from lit_sb3.buffers import RolloutBuffer
-from lit_sb3.buffers.recurrent import RecurrentDictRolloutBuffer, RecurrentRolloutBuffer
+from lit_sb3.buffers.recurrent.dict_rollout import RecurrentDictRolloutBuffer
+from lit_sb3.buffers.recurrent.rollout import RecurrentRolloutBuffer
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.types import GymEnv, MaybeCallback, RNNStates, Schedule
-from lit_sb3.common.utils import FloatSchedule, explained_variance, obs_as_tensor
+from lit_sb3.core.types import GymEnv, MaybeCallback, RNNStates, Schedule
+from lit_sb3.core.utils import FloatSchedule, explained_variance, obs_as_tensor
 from lit_sb3.policies import BasePolicy
-from lit_sb3.policies.recurrent import RecurrentActorCriticPolicy
+from lit_sb3.policies.recurrent.recurrent_actor_critic import RecurrentActorCriticPolicy
 from lit_sb3.vec_env import VecEnv
 
 SelfRecurrentPPO = TypeVar("SelfRecurrentPPO", bound="RecurrentPPO")
@@ -89,7 +91,7 @@ class RecurrentPPO(OnPolicyAlgorithm):
         sde_sample_freq: int = -1,
         target_kl: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -443,7 +445,7 @@ class RecurrentPPO(OnPolicyAlgorithm):
         self: SelfRecurrentPPO,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 1,
+        log_every_n_steps: int | None = 1,
         tb_log_name: str = "RecurrentPPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -451,7 +453,7 @@ class RecurrentPPO(OnPolicyAlgorithm):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

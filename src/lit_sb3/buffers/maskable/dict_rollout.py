@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from lit_sb3.buffers.dict_rollout import DictRolloutBuffer
-from lit_sb3.common.types import TensorDict
+from lit_sb3.core.types import TensorDict
 from lit_sb3.vec_env import VecNormalize
 
 
@@ -80,8 +80,12 @@ class MaskableDictRolloutBuffer(DictRolloutBuffer):
         super().reset()
 
     def add(self, *args, action_masks: np.ndarray | None = None, **kwargs) -> None:
-        """Args:
-        action_masks: Masks applied to constrain the choice of possible actions.
+        """Add transition to buffer.
+
+        Args:
+            *args: Positional arguments forwarded to parent ``add``.
+            action_masks: Masks applied to constrain the choice of possible actions.
+            **kwargs: Keyword arguments forwarded to parent ``add``.
         """
         if action_masks is not None:
             self.action_masks[self.pos] = action_masks.reshape((self.n_envs, self.mask_dims))

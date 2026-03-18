@@ -2,7 +2,7 @@ import gymnasium as gym
 import torch
 from torch import nn
 
-from lit_sb3.common.preprocessing import get_flattened_obs_dim
+from lit_sb3.core.preprocessing import get_flattened_obs_dim
 from lit_sb3.modules.feature_extractors.base import BaseFeaturesExtractor
 
 

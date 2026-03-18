@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from lit_sb3.buffers.rollout import RolloutBuffer
-from lit_sb3.common.types import DictRolloutBufferSamples
+from lit_sb3.core.types import DictRolloutBufferSamples
 from lit_sb3.vec_env import VecNormalize
 
 

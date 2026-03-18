@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 from lit_sb3.callbacks import EvalCallback
-from lit_sb3.common.maskable.evaluation import evaluate_policy
+from lit_sb3.core.evaluation import evaluate_policy
 from lit_sb3.vec_env import sync_envs_normalization
 
 
@@ -56,7 +56,7 @@ class MaskableEvalCallback(EvalCallback):
 
             # Note that evaluate_policy() has been patched to support masking
             episode_rewards, episode_lengths = evaluate_policy(
-                self.model,  # ty:ignore[invalid-argument-type]
+                self.model,
                 self.eval_env,
                 n_eval_episodes=self.n_eval_episodes,
                 render=self.render,

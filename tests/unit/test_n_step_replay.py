@@ -51,8 +51,9 @@ def fill_buffer(buffer, length, done_at=None, truncated_at=None):
 
 
 def compute_expected_nstep_reward(gamma, n_steps, stop_idx=None):
-    """Compute the expected n-step reward (reward=1 per step),
-    optionally stopping early due to termination/truncation.
+    """Compute the expected n-step reward (reward=1 per step).
+
+    Optionally stops early due to termination/truncation.
     """
     returns = np.zeros(n_steps)
     rewards = np.ones(n_steps)

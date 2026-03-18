@@ -42,18 +42,18 @@ def test_check_nan():
     env = DummyVecEnv([NanAndInfEnv])
     env = VecCheckNan(env, raise_exception=True)
 
-    env.step([[0]])
+    env.step([[0]])  # ty:ignore[invalid-argument-type]
 
     with pytest.raises(ValueError):
-        env.step([[float("NaN")]])
+        env.step([[float("NaN")]])  # ty:ignore[invalid-argument-type]
 
     with pytest.raises(ValueError):
-        env.step([[float("inf")]])
+        env.step([[float("inf")]])  # ty:ignore[invalid-argument-type]
 
     with pytest.raises(ValueError):
-        env.step([[-1]])
+        env.step([[-1]])  # ty:ignore[invalid-argument-type]
 
     with pytest.raises(ValueError):
-        env.step([[1]])
+        env.step([[1]])  # ty:ignore[invalid-argument-type]
 
     env.reset()

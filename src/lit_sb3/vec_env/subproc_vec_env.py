@@ -134,7 +134,7 @@ class SubprocVecEnv(VecEnv):
         if isinstance(result, Exception):
             for process in self.processes:
                 process.terminate()
-            raise RuntimeError(f"Error when creating environment in subprocess: {result}") from result
+            raise RuntimeError(f"Error when creating environment in subprocess: {result}") from result  # noqa: TRY004
         observation_space, action_space = result
 
         super().__init__(len(env_fns), observation_space, action_space)

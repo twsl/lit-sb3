@@ -6,8 +6,8 @@ Adapted from HenryJia/lightning-baselines3 tests/common/test_utils.py.
 from gymnasium import spaces
 import pytest
 
-from lit_sb3.common.preprocessing import get_action_dim, get_obs_shape
-from lit_sb3.common.utils import zip_strict
+from lit_sb3.core.preprocessing import get_action_dim, get_obs_shape
+from lit_sb3.core.utils import zip_strict
 
 
 def test_get_action_dim():

@@ -117,7 +117,7 @@ class FormatUnsupportedError(NotImplementedError):
 class KVWriter:
     """Key Value writer."""
 
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], step: int = 0) -> None:
         """Write a dictionary to file.
 
         Args:
@@ -173,7 +173,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         else:
             raise ValueError(f"Expected file or str, got {filename_or_file}")
 
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], step: int = 0) -> None:
         # Create strings for printing
         key2str = {}
         tag = ""
@@ -260,7 +260,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
 
 def filter_excluded_keys(
-    key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], _format: str
+    key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], _format: str
 ) -> dict[str, Any]:
     """Filters the keys specified by ``key_exclude`` for the specified format.
 
@@ -274,7 +274,8 @@ def filter_excluded_keys(
     """
 
     def is_excluded(key: str) -> bool:
-        return key in key_excluded and key_excluded[key] is not None and _format in key_excluded[key]
+        excluded_formats = key_excluded.get(key)
+        return excluded_formats is not None and _format in excluded_formats
 
     return {key: value for key, value in key_values.items() if not is_excluded(key)}
 
@@ -289,7 +290,7 @@ class JSONOutputFormat(KVWriter):
     def __init__(self, filename: str):
         self.file = Path(filename).open("w")  # noqa: SIM115
 
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], step: int = 0) -> None:
         def cast_to_json_serializable(value: Any):
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["json"], "video")
@@ -333,7 +334,7 @@ class CSVOutputFormat(KVWriter):
         self.separator = ","
         self.quotechar = '"'
 
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], step: int = 0) -> None:
         # Add our current row to the history
         key_values = filter_excluded_keys(key_values, key_excluded, "csv")
         extra_keys = key_values.keys() - self.keys
@@ -397,7 +398,7 @@ class TensorBoardOutputFormat(KVWriter):
         self.writer = SummaryWriter(log_dir=folder)
         self._is_closed = False
 
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...] | None], step: int = 0) -> None:
         assert not self._is_closed, "The SummaryWriter was closed, please re-create one."
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items()), strict=False):
             if excluded is not None and "tensorboard" in excluded:
@@ -484,7 +485,7 @@ class Logger:
     def __init__(self, folder: str | None, output_formats: list[KVWriter]):
         self.name_to_value: dict[str, float] = defaultdict(float)  # values this iteration
         self.name_to_count: dict[str, int] = defaultdict(int)
-        self.name_to_excluded: dict[str, tuple[str, ...]] = {}
+        self.name_to_excluded: dict[str, tuple[str, ...] | None] = {}
         self.level = INFO
         self.dir = folder
         self.output_formats = output_formats

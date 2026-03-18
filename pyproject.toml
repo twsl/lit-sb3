@@ -29,6 +29,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+hub = [
+    "huggingface-hub>=1.7.1",
+]
+opt = [
+    "optuna>=4.8.0",
+]
 viz = [
     "matplotlib>=3.10.8",
     "pandas>=3.0.1",

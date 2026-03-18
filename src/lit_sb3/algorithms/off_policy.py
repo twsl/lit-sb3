@@ -14,13 +14,13 @@ from __future__ import annotations
 from copy import deepcopy
 import io
 import pathlib
+from pathlib import Path
 import sys
 import time
 from typing import Any, Optional, TypeVar, Union
 import warnings
 
 from gymnasium import spaces
-import lightning as L  # noqa: N812
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -31,9 +31,9 @@ from lit_sb3.buffers.dict_replay import DictReplayBuffer
 from lit_sb3.buffers.nstep_replay import NStepReplayBuffer
 from lit_sb3.buffers.replay import ReplayBuffer
 from lit_sb3.callbacks import BaseCallback
-from lit_sb3.common.noise import ActionNoise, VectorizedActionNoise
-from lit_sb3.common.types import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
-from lit_sb3.common.utils import safe_mean, should_collect_more_steps
+from lit_sb3.core.noise import ActionNoise, VectorizedActionNoise
+from lit_sb3.core.types import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
+from lit_sb3.core.utils import safe_mean, should_collect_more_steps
 from lit_sb3.data.replay import ReplayBufferDataset
 from lit_sb3.policies import BasePolicy
 from lit_sb3.utils.save_util import load_from_pkl, save_to_pkl
@@ -106,7 +106,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         n_steps: int = 1,
         policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         verbose: int = 0,
         device: torch.device | str = "auto",
         support_multi_env: bool = False,
@@ -453,44 +453,58 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         return super()._setup_learn(total_timesteps, callback, reset_num_timesteps, tb_log_name, progress_bar)
 
+    # ------------------------------------------------------------------
+    # RLTrainer protocol
+    # ------------------------------------------------------------------
+
+    @property
+    def _default_log_every_n_steps(self) -> int:
+        return 4
+
+    def _prepare_fit(
+        self,
+        callback: BaseCallback,
+        log_every_n_steps: int,
+    ) -> None:
+        """Inject off-policy state needed by Lightning hooks."""
+        assert isinstance(self.train_freq, TrainFreq)
+        self._rl_callback = callback
+        self._log_interval = log_every_n_steps
+
+    def _rl_max_epochs(self, total_timesteps: int) -> int:
+        # Off-policy uses a single epoch driven by ReplayBufferDataset length.
+        return 1
+
+    # _pre_fit_hook: no pre-collection needed for off-policy; default no-op is used.
+
+    # ------------------------------------------------------------------
+    # SB3-compatible learn() — delegates to RLTrainer
+    # ------------------------------------------------------------------
+
     def learn(
         self: SelfOffPolicyAlgorithm,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 4,
+        log_every_n_steps: int | None = None,
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfOffPolicyAlgorithm:
-        """Train for ``total_timesteps`` env steps using Lightning Trainer.
+        """Train for ``total_timesteps`` env steps.
 
-        The Trainer uses a single epoch whose length is driven by
-        ``ReplayBufferDataset(total_timesteps)``.
+        Delegates to :class:`~lit_sb3.trainer.RLTrainer`.  For full control
+        over Lightning Trainer settings (precision, loggers, plugins …) construct
+        ``RLTrainer`` directly::
+
+            RLTrainer(max_steps=total_timesteps, ...).fit(model)
         """
-        total_timesteps, callback = self._setup_learn(
-            total_timesteps,
-            callback,
-            reset_num_timesteps,
-            tb_log_name,
-            progress_bar,
-        )
-        assert isinstance(self.train_freq, TrainFreq)
+        from lit_sb3.trainer import RLTrainer
 
-        self._rl_callback = callback
-        self._log_interval = log_interval
-
-        trainer = L.Trainer(
-            max_epochs=1,
+        return RLTrainer(  # type: ignore[return-value]
+            max_steps=total_timesteps,
+            rl_callback=callback,
+            log_every_n_steps=log_every_n_steps,
+            tb_log_name=tb_log_name,
+            reset_num_timesteps=reset_num_timesteps,
             enable_progress_bar=progress_bar,
-            enable_model_summary=False,
-            enable_checkpointing=False,
-            logger=False,
-            accelerator="cpu" if self.device == torch.device("cpu") else "gpu",
-            devices=1,
-            callbacks=[callback],
-        )
-
-        callback.on_training_start(locals(), globals())
-        trainer.fit(self)
-        # on_train_end() calls callback.on_training_end()
-        return self
+        ).fit(self)

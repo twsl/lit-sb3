@@ -11,7 +11,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 def run_ppo():
     print("=== PPO on CartPole-v1 ===")
-    from lit_sb3.algorithms.ppo import PPO
+    from lit_sb3.algorithms.ppo.ppo import PPO
 
     model = PPO("MlpPolicy", "CartPole-v1", verbose=1, n_steps=256, batch_size=64, n_epochs=5)
     model.learn(total_timesteps=5_000)
@@ -21,7 +21,7 @@ def run_ppo():
 
 def run_sac():
     print("=== SAC on Pendulum-v1 ===")
-    from lit_sb3.algorithms.sac import SAC
+    from lit_sb3.algorithms.sac.sac import SAC
 
     model = SAC("MlpPolicy", "Pendulum-v1", verbose=1, learning_starts=200)
     model.learn(total_timesteps=2_000)
@@ -31,7 +31,7 @@ def run_sac():
 
 def run_dqn():
     print("=== DQN on CartPole-v1 ===")
-    from lit_sb3.algorithms.dqn import DQN
+    from lit_sb3.algorithms.dqn.dqn import DQN
 
     model = DQN("MlpPolicy", "CartPole-v1", verbose=1, learning_starts=200)
     model.learn(total_timesteps=2_000)

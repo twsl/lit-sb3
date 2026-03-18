@@ -1,6 +1,6 @@
 import numpy as np
 
-from lit_sb3.common.types import GymEnv
+from lit_sb3.core.types import GymEnv
 from lit_sb3.vec_env import VecEnv
 
 EXPECTED_METHOD_NAME = "action_masks"

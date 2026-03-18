@@ -25,7 +25,9 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
     """
     smallest_dimension = np.argmin(observation_space.shape).item()
     if smallest_dimension == 1:
-        warnings.warn("Treating image space as channels-last, while second dimension was smallest of the three.", stacklevel=2)
+        warnings.warn(
+            "Treating image space as channels-last, while second dimension was smallest of the three.", stacklevel=2
+        )
     return smallest_dimension == 0
 
 

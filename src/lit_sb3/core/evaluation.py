@@ -5,7 +5,8 @@ import warnings
 import gymnasium as gym
 import numpy as np
 
-from lit_sb3.common import types as type_aliases
+from lit_sb3.core import types as type_aliases
+from lit_sb3.utils.maskable import get_action_masks, is_masking_supported
 from lit_sb3.vec_env import DummyVecEnv, VecEnv, VecMonitor, is_vecenv_wrapped
 
 
@@ -19,10 +20,10 @@ def evaluate_policy(
     reward_threshold: float | None = None,
     return_episode_rewards: bool = False,
     warn: bool = True,
+    use_masking: bool = False,
 ) -> tuple[float, float] | tuple[list[float], list[int]]:
     """Runs the policy for ``n_eval_episodes`` episodes and outputs the average return.
 
-    per episode (sum of undiscounted rewards).
     If a vector env is passed in, this divides the episodes to evaluate onto the
     different elements of the vector env. This static division of work is done to
     remove bias. See https://github.com/DLR-RM/stable-baselines3/issues/402 for more
@@ -54,6 +55,8 @@ def evaluate_policy(
             per episode will be returned instead of the mean.
         warn: If True (default), warns user about lack of a Monitor wrapper in the
             evaluation environment.
+        use_masking: Whether or not to use invalid action masks during evaluation.
+            Requires the environment to support action masking.
 
     Returns:
         Mean return per episode (sum of rewards), std of reward per episode.
@@ -61,6 +64,9 @@ def evaluate_policy(
         list containing per-episode return and second containing per-episode lengths
         (in number of steps).
     """
+    if use_masking and not is_masking_supported(env):
+        raise ValueError("Environment does not support action masking. Consider using ActionMasker wrapper")
+
     is_monitor_wrapped = False
     # Avoid circular import
     from lit_sb3.wrappers.monitor import Monitor
@@ -93,12 +99,22 @@ def evaluate_policy(
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
     while (episode_counts < episode_count_targets).any():
-        actions, states = model.predict(
-            observations,  # type: ignore[arg-type]
-            state=states,
-            episode_start=episode_starts,
-            deterministic=deterministic,
-        )
+        if use_masking:
+            action_masks = get_action_masks(env)
+            actions, states = model.predict(
+                observations,  # type: ignore[arg-type]
+                state=states,
+                episode_start=episode_starts,
+                deterministic=deterministic,
+                action_masks=action_masks,  # ty:ignore[unknown-argument]
+            )
+        else:
+            actions, states = model.predict(
+                observations,  # type: ignore[arg-type]
+                state=states,
+                episode_start=episode_starts,
+                deterministic=deterministic,
+            )
         new_observations, rewards, dones, infos = env.step(actions)
         current_rewards += rewards
         current_lengths += 1

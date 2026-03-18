@@ -8,9 +8,9 @@ from typing import Any, Optional, Union
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.common import utils
-from lit_sb3.common.preprocessing import is_image_space
-from lit_sb3.common.running_mean_std import RunningMeanStd
+from lit_sb3.core import utils
+from lit_sb3.core.preprocessing import is_image_space
+from lit_sb3.core.running_mean_std import RunningMeanStd
 from lit_sb3.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -101,8 +101,7 @@ class VecNormalize(VecEnvWrapper):
         self.old_reward = np.array([])
 
     def _sanity_checks(self) -> None:
-        """Check the observations that are going to be normalized are of the correct type (spaces.Box).
-        """
+        """Check the observations that are going to be normalized are of the correct type (spaces.Box)."""
         if isinstance(self.observation_space, spaces.Dict):
             # By default, we normalize all keys
             if self.norm_obs_keys is None:
@@ -273,9 +272,7 @@ class VecNormalize(VecEnvWrapper):
         # This cast is needed because `RunningMeanStd` keeps stats in float64
         return reward.astype(np.float32)
 
-    def unnormalize_obs(
-        self, obs: np.ndarray | dict[str, np.ndarray]
-    ) -> np.ndarray | dict[str, np.ndarray]:
+    def unnormalize_obs(self, obs: np.ndarray | dict[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
         # Avoid modifying by reference the original object
         obs_ = deepcopy(obs)
         if self.norm_obs:
@@ -301,8 +298,7 @@ class VecNormalize(VecEnvWrapper):
         return deepcopy(self.old_obs)
 
     def get_original_reward(self) -> np.ndarray:
-        """Returns an unnormalized version of the rewards from the most recent step.
-        """
+        """Returns an unnormalized version of the rewards from the most recent step."""
         return self.old_reward.copy()
 
     def reset(self) -> np.ndarray | dict[str, np.ndarray]:
@@ -325,7 +321,7 @@ class VecNormalize(VecEnvWrapper):
         return self.normalize_obs(obs)
 
     @staticmethod
-    def load(load_path: str, venv: VecEnv) -> "VecNormalize":
+    def load(load_path: str | Path, venv: VecEnv) -> "VecNormalize":
         """Loads a saved VecNormalize object.
 
         Args:
@@ -337,7 +333,7 @@ class VecNormalize(VecEnvWrapper):
         vec_normalize.set_venv(venv)
         return vec_normalize
 
-    def save(self, save_path: str) -> None:
+    def save(self, save_path: str | Path) -> None:
         """Save current VecNormalize object with.
 
         all running statistics and settings (e.g. clip_obs).

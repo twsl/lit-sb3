@@ -37,7 +37,7 @@ class VecVideoRecorder(VecEnvWrapper):
     def __init__(
         self,
         venv: VecEnv,
-        video_folder: str,
+        video_folder: str | Path,
         record_video_trigger: Callable[[int], bool],
         video_length: int = 200,
         name_prefix: str = "rl-video",

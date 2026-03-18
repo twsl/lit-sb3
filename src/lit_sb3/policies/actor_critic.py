@@ -12,9 +12,9 @@ import numpy as np
 import torch
 from torch import nn
 
-from lit_sb3.common.preprocessing import get_action_dim, is_image_space, maybe_transpose, preprocess_obs
-from lit_sb3.common.types import PyTorchObs, Schedule
-from lit_sb3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
+from lit_sb3.core.preprocessing import get_action_dim, is_image_space, maybe_transpose, preprocess_obs
+from lit_sb3.core.types import PyTorchObs, Schedule
+from lit_sb3.core.utils import get_device, is_vectorized_observation, obs_as_tensor
 from lit_sb3.distributions import (
     BernoulliDistribution,
     CategoricalDistribution,

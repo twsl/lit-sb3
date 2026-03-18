@@ -1,7 +1,7 @@
 import numpy as np
 
 from lit_sb3.buffers.replay import ReplayBuffer
-from lit_sb3.common.types import ReplayBufferSamples
+from lit_sb3.core.types import ReplayBufferSamples
 from lit_sb3.vec_env import VecNormalize
 
 

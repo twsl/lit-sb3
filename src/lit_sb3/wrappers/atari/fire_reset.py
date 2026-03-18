@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from lit_sb3.common.types import AtariResetReturn
+from lit_sb3.core.types import AtariResetReturn
 
 
 class FireResetEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):

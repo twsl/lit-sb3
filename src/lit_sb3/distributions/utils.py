@@ -6,7 +6,7 @@ from gymnasium import spaces
 import numpy as np
 import torch
 
-from lit_sb3.common.preprocessing import get_action_dim
+from lit_sb3.core.preprocessing import get_action_dim
 from lit_sb3.distributions.base import Distribution
 from lit_sb3.distributions.bernoulli import BernoulliDistribution
 from lit_sb3.distributions.categorical import CategoricalDistribution
@@ -76,7 +76,7 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> torch.Ten
         return torch.stack(
             [
                 torch.distributions.kl_divergence(p, q)
-                for p, q in zip(dist_true.distribution, dist_pred.distribution, strict=False)  # ty:ignore[invalid-argument-type]
+                for p, q in zip(dist_true.distribution, dist_pred.distribution, strict=False)
             ],
             dim=1,
         ).sum(dim=1)

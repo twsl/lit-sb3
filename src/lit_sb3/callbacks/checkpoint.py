@@ -30,7 +30,7 @@ class CheckpointCallback(BaseCallback):
     def __init__(
         self,
         save_freq: int,
-        save_path: str,
+        save_path: str | Path,
         name_prefix: str = "rl_model",
         save_replay_buffer: bool = False,
         save_vecnormalize: bool = False,

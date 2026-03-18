@@ -66,7 +66,7 @@ class DictObsVecEnv(VecEnv):
         indices = range(self.num_envs) if indices is None else indices
         return [False for _ in indices]
 
-    def env_method(self):
+    def env_method(self):  # ty:ignore[invalid-method-override]
         raise NotImplementedError
 
     def set_attr(self, attr_name, value, indices=None) -> None:
@@ -80,8 +80,8 @@ def test_extract_dict_obs():
     assert env.reset().shape == (4, 86, 86)
 
     for _ in range(10):
-        obs, _, dones, infos = env.step([env.action_space.sample() for _ in range(env.num_envs)])
-        assert obs.shape == (4, 86, 86)
+        obs, _, dones, infos = env.step([env.action_space.sample() for _ in range(env.num_envs)])  # ty:ignore[invalid-argument-type]
+        assert obs.shape == (4, 86, 86)  # ty:ignore[unresolved-attribute]
         for idx, info in enumerate(infos):
             if "terminal_observation" in info:
                 assert dones[idx]

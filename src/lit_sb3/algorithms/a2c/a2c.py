@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, ClassVar, Optional, TypeVar, Union
 
 from gymnasium import spaces
@@ -6,8 +7,8 @@ from torch.nn import functional as F  # noqa: N812
 
 from lit_sb3.algorithms.on_policy import OnPolicyAlgorithm
 from lit_sb3.buffers import RolloutBuffer
-from lit_sb3.common.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.common.utils import explained_variance
+from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
+from lit_sb3.core.utils import explained_variance
 from lit_sb3.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
 
 SelfA2C = TypeVar("SelfA2C", bound="A2C")
@@ -82,7 +83,7 @@ class A2C(OnPolicyAlgorithm):
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         normalize_advantage: bool = False,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
+        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -189,7 +190,7 @@ class A2C(OnPolicyAlgorithm):
         self: SelfA2C,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 100,
+        log_every_n_steps: int | None = 100,
         tb_log_name: str = "A2C",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
@@ -197,7 +198,7 @@ class A2C(OnPolicyAlgorithm):
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
-            log_interval=log_interval,
+            log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,

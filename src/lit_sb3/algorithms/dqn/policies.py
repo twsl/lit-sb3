@@ -4,7 +4,7 @@ from gymnasium import spaces
 import torch
 from torch import nn
 
-from lit_sb3.common.types import PyTorchObs, Schedule
+from lit_sb3.core.types import PyTorchObs, Schedule
 from lit_sb3.modules import (
     BaseFeaturesExtractor,
     CombinedExtractor,

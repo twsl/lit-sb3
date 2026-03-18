@@ -117,36 +117,30 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         return observation, reward, terminated, truncated, info
 
     def close(self) -> None:
-        """Closes the environment.
-        """
+        """Closes the environment."""
         super().close()
         if self.results_writer is not None:
             self.results_writer.close()
 
     def get_total_steps(self) -> int:
-        """Returns the total number of timesteps.
-        """
+        """Returns the total number of timesteps."""
         return self.total_steps
 
     def get_episode_rewards(self) -> list[float]:
-        """Returns the rewards of all the episodes.
-        """
+        """Returns the rewards of all the episodes."""
         return self.episode_returns
 
     def get_episode_lengths(self) -> list[int]:
-        """Returns the number of timesteps of all the episodes.
-        """
+        """Returns the number of timesteps of all the episodes."""
         return self.episode_lengths
 
     def get_episode_times(self) -> list[float]:
-        """Returns the runtime in seconds of all the episodes.
-        """
+        """Returns the runtime in seconds of all the episodes."""
         return self.episode_times
 
 
 class LoadMonitorResultsError(Exception):
-    """Raised when loading the monitor log fails.
-    """
+    """Raised when loading the monitor log fails."""
 
     pass
 
@@ -200,12 +194,11 @@ class ResultsWriter:
             self.file_handler.flush()
 
     def close(self) -> None:
-        """Close the file handler.
-        """
+        """Close the file handler."""
         self.file_handler.close()
 
 
-def get_monitor_files(path: str) -> list[str]:
+def get_monitor_files(path: str | Path) -> list[str]:
     """Get all the monitor files in the given path.
 
     Args:
@@ -217,7 +210,7 @@ def get_monitor_files(path: str) -> list[str]:
     return [str(p) for p in Path(path).glob("*" + Monitor.EXT)]
 
 
-def load_results(path: str) -> pandas.DataFrame:
+def load_results(path: str | Path) -> pandas.DataFrame:
     """Load all Monitor logs from a given directory path matching ``*monitor.csv``.
 
     Args:

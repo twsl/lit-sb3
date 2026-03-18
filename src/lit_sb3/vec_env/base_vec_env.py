@@ -78,7 +78,9 @@ class VecEnv(ABC):
         try:
             render_modes = self.get_attr("render_mode")
         except AttributeError:
-            warnings.warn("The `render_mode` attribute is not defined in your environment. It will be set to None.", stacklevel=2)
+            warnings.warn(
+                "The `render_mode` attribute is not defined in your environment. It will be set to None.", stacklevel=2
+            )
             render_modes = [None for _ in range(num_envs)]
 
         assert all(render_mode == render_modes[0] for render_mode in render_modes), (
@@ -86,18 +88,22 @@ class VecEnv(ABC):
         )
         self.render_mode = render_modes[0]
 
-        render_modes = ["human", "rgb_array"] if self.render_mode == "rgb_array" else [self.render_mode] if self.render_mode is not None else []
+        render_modes = (
+            ["human", "rgb_array"]
+            if self.render_mode == "rgb_array"
+            else [self.render_mode]
+            if self.render_mode is not None
+            else []
+        )
 
         self.metadata = {"render_modes": render_modes}
 
     def _reset_seeds(self) -> None:
-        """Reset the seeds that are going to be used at the next reset.
-        """
+        """Reset the seeds that are going to be used at the next reset."""
         self._seeds = [None for _ in range(self.num_envs)]
 
     def _reset_options(self) -> None:
-        """Reset the options that are going to be used at the next reset.
-        """
+        """Reset the options that are going to be used at the next reset."""
         self._options = [{} for _ in range(self.num_envs)]
 
     @abstractmethod
@@ -138,8 +144,7 @@ class VecEnv(ABC):
 
     @abstractmethod
     def close(self) -> None:
-        """Clean up the environment's resources.
-        """
+        """Clean up the environment's resources."""
         raise NotImplementedError()
 
     def has_attr(self, attr_name: str) -> bool:
@@ -229,8 +234,7 @@ class VecEnv(ABC):
         return self.step_wait()
 
     def get_images(self) -> Sequence[np.ndarray | None]:
-        """Return RGB images from each environment when available.
-        """
+        """Return RGB images from each environment when available."""
         raise NotImplementedError
 
     def render(self, mode: str | None = None) -> np.ndarray | None:
@@ -246,7 +250,8 @@ class VecEnv(ABC):
                 warnings.warn(
                     f"You tried to render a VecEnv with mode='{mode}' "
                     "but the render mode defined when initializing the environment must be "
-                    f"'human' or 'rgb_array', not '{self.render_mode}'.", stacklevel=2
+                    f"'human' or 'rgb_array', not '{self.render_mode}'.",
+                    stacklevel=2,
                 )
                 return None
 
@@ -254,14 +259,17 @@ class VecEnv(ABC):
             warnings.warn(
                 f"""Starting from gymnasium v0.26, render modes are determined during the initialization of the environment.
                 We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode})
-                has to be the same as the environment render mode ({self.render_mode}) which is not the case.""", stacklevel=2
+                has to be the same as the environment render mode ({self.render_mode}) which is not the case.""",
+                stacklevel=2,
             )
             return None
 
         mode = mode or self.render_mode
 
         if mode is None:
-            warnings.warn("You tried to call render() but no `render_mode` was passed to the env constructor.", stacklevel=2)
+            warnings.warn(
+                "You tried to call render() but no `render_mode` was passed to the env constructor.", stacklevel=2
+            )
             return None
 
         # mode == self.render_mode == "human"
@@ -279,7 +287,7 @@ class VecEnv(ABC):
 
             if mode == "human":
                 # Display it using OpenCV
-                import cv2
+                import cv2  # ty:ignore[unresolved-import]
 
                 cv2.imshow("vecenv", bigimg[:, :, ::-1])
                 cv2.waitKey(1)

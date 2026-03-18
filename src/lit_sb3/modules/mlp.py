@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from lit_sb3.common.utils import get_device
+from lit_sb3.core.utils import get_device
 
 
 def create_mlp(

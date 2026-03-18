@@ -24,7 +24,7 @@ try:
 except ImportError:
     SummaryWriter = None  # type: ignore[misc, assignment]
 
-from lit_sb3.common.types import GymEnv, Schedule, TensorDict, TrainFreq, TrainFrequencyUnit
+from lit_sb3.core.types import GymEnv, Schedule, TensorDict, TrainFreq, TrainFrequencyUnit
 from lit_sb3.utils.logger import Logger, configure
 
 
@@ -266,7 +266,7 @@ def get_device(device: torch.device | str = "auto") -> torch.device:
     return device
 
 
-def get_latest_run_id(log_path: str = "", log_name: str = "") -> int:
+def get_latest_run_id(log_path: str | Path = "", log_name: str = "") -> int:
     """Returns the latest run number for the given log name and log path,.
 
     by finding the greatest number in the directories.
@@ -290,7 +290,7 @@ def get_latest_run_id(log_path: str = "", log_name: str = "") -> int:
 
 def configure_logger(
     verbose: int = 0,
-    tensorboard_log: str | None = None,
+    tensorboard_log: str | Path | None = None,
     tb_log_name: str = "",
     reset_num_timesteps: bool = True,
 ) -> Logger:

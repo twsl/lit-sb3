@@ -8,7 +8,7 @@ from gymnasium import spaces
 import numpy as np
 import pytest
 
-from lit_sb3.common.env_checker import check_env
+from lit_sb3.core.env_checker import check_env
 from lit_sb3.envs.bit_flipping_env import BitFlippingEnv
 from lit_sb3.envs.identity_env import (
     FakeImageEnv,
@@ -62,7 +62,7 @@ def test_high_dimension_action_space():
     def patched_step(_action):
         return env.observation_space.sample(), 0.0, False, False, {}
 
-    env.step = patched_step
+    env.step = patched_step  # ty:ignore[invalid-assignment]
     check_env(env)
 
 
@@ -91,8 +91,8 @@ def test_non_default_spaces(new_obs_space):
     def patched_step(_action):
         return new_obs_space.sample(), 0.0, False, False, {}
 
-    env.reset = patched_reset
-    env.step = patched_step
+    env.reset = patched_reset  # ty:ignore[invalid-assignment]
+    env.step = patched_step  # ty:ignore[invalid-assignment]
     with pytest.warns(UserWarning):
         check_env(env)
 
