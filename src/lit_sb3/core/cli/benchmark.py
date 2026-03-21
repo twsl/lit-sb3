@@ -1,18 +1,9 @@
-"""Benchmark trained agents and generate a markdown report.
-
-Adapted from
-https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/benchmark.py
-
-Usage::
-
-    python -m lit_sb3.zoo.benchmark --log-dir rl-trained-agents/
-"""
+"""Argument parser and logic for the ``benchmark`` sub-command."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -45,9 +36,8 @@ except ImportError:
     _HUB_DOWNLOAD_AVAILABLE = False
 
 
-def benchmark() -> None:  # noqa: C901
-    """Run benchmark evaluation over all trained models and generate a report."""
-    parser = argparse.ArgumentParser()
+def _add_benchmark_args(parser: argparse.ArgumentParser) -> None:
+    """Add benchmark arguments to *parser*."""
     parser.add_argument("--log-dir", help="Root log folder", default="rl-trained-agents/", type=str)
     parser.add_argument("--benchmark-dir", help="Benchmark log folder", default="logs/benchmark/", type=str)
     parser.add_argument("-n", "--n-timesteps", help="number of timesteps", default=150000, type=int)
@@ -63,8 +53,10 @@ def benchmark() -> None:  # noqa: C901
     parser.add_argument("--with-mujoco", action="store_true", default=False, help="Run also MuJoCo envs")
     parser.add_argument("--no-hub", action="store_true", default=False, help="Do not download models from hub")
     parser.add_argument("--num-threads", help="Number of threads for PyTorch", default=2, type=int)
-    args = parser.parse_args()
 
+
+def run_benchmark(args: argparse.Namespace) -> None:  # noqa: C901
+    """Run benchmark evaluation over all trained models and generate a report."""
     trained_models = get_trained_models(args.log_dir)
 
     if not args.no_hub:
@@ -120,7 +112,7 @@ def benchmark() -> None:  # noqa: C901
             "--verbose",
             "0",
             "--reward-log",
-            reward_log,
+            str(reward_log),
         ]
         if args.verbose >= 1:
             print(f"{idx + 1}/{n_experiments}")
@@ -134,7 +126,7 @@ def benchmark() -> None:  # noqa: C901
             except (json.JSONDecodeError, Exception):  # noqa: S110
                 pass
 
-        # Comment out to benchmark HER robotics env —  requires a mujoco licence
+        # Comment out to benchmark HER robotics env — requires a mujoco licence
         if "Fetch" in env_id and not args.with_mujoco:
             print(f"Skipping mujoco env: {env_id}")
             if not skip_eval:
@@ -225,7 +217,7 @@ def benchmark() -> None:  # noqa: C901
 ## Performance of trained agents
 
 Final performance of the trained agents can be found in the table below.
-This was computed by running `python -m lit_sb3.zoo.benchmark`:
+This was computed by running `python -m lit_sb3 benchmark`:
 it runs the trained agent (trained on `n_timesteps`)
 for `eval_timesteps` and then reports the mean episode reward
 during this evaluation.
@@ -256,7 +248,3 @@ and also allow users to have access to pretrained agents.*
     if not args.test_mode:
         shutil.copy(tmp_path, "benchmark.md")
         print("Results copied to: benchmark.md")
-
-
-if __name__ == "__main__":
-    benchmark()

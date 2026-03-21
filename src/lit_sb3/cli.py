@@ -19,6 +19,7 @@ import sys
 
 from lit_sb3.core.cli import (
     _add_all_plots_args,
+    _add_benchmark_args,
     _add_enjoy_args,
     _add_load_from_hub_args,
     _add_plot_from_file_args,
@@ -26,6 +27,7 @@ from lit_sb3.core.cli import (
     _add_push_to_hub_args,
     _add_train_args,
     run_all_plots,
+    run_benchmark,
     run_enjoy,
     run_load_from_hub,
     run_plot_from_file,
@@ -39,7 +41,9 @@ def main() -> None:
     """Dispatch to the requested sub-command."""
     if len(sys.argv) < 2:
         print("Usage: lit-sb3 <command> [args...]")
-        print("Available commands: train, enjoy, load_from_hub, push_to_hub, plot_train, plot_from_file, all_plots")
+        print(
+            "Available commands: train, enjoy, load_from_hub, push_to_hub, plot_train, plot_from_file, all_plots, benchmark"
+        )
         sys.exit(1)
 
     script_name = sys.argv[1]
@@ -81,6 +85,11 @@ def main() -> None:
             argparse.ArgumentParser(description="Aggregate and plot results from multiple experiments."),
             _add_all_plots_args,
             run_all_plots,
+        ),
+        "benchmark": (
+            argparse.ArgumentParser(description="Benchmark trained agents and generate a markdown report."),
+            _add_benchmark_args,
+            run_benchmark,
         ),
     }
 
