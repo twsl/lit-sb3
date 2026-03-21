@@ -11,8 +11,9 @@ from torch.nn import functional as F  # noqa: N812
 from lit_sb3.algorithms.on_policy import OnPolicyAlgorithm
 from lit_sb3.buffers import RolloutBuffer
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.core.utils import FloatSchedule, explained_variance
 from lit_sb3.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
+from lit_sb3.utils.math import explained_variance
+from lit_sb3.utils.schedule import FloatSchedule
 
 SelfPPO = TypeVar("SelfPPO", bound="PPO")
 

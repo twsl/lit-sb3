@@ -10,7 +10,9 @@ import re
 import shutil
 import subprocess
 
-from lit_sb3.zoo.utils import ALGOS, EnvironmentName, get_latest_run_id
+from lit_sb3.huggingface.naming_schemes import EnvironmentName
+from lit_sb3.utils.registry import ALGOS
+from lit_sb3.utils.system import get_latest_run_id
 
 
 def _add_record_training_args(parser: argparse.ArgumentParser) -> None:

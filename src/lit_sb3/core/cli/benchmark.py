@@ -10,8 +10,9 @@ import subprocess
 
 import numpy as np
 
+from lit_sb3.utils.model import get_saved_hyperparams, get_trained_models
+from lit_sb3.utils.system import get_latest_run_id
 import lit_sb3.zoo.import_envs  # noqa: F401
-from lit_sb3.zoo.utils import get_latest_run_id, get_saved_hyperparams, get_trained_models
 
 try:
     import pandas as pd
@@ -61,7 +62,7 @@ def run_benchmark(args: argparse.Namespace) -> None:  # noqa: C901
 
     if not args.no_hub:
         try:
-            from lit_sb3.zoo.utils import get_hf_trained_models
+            from lit_sb3.utils.model import get_hf_trained_models
 
             trained_models.update(get_hf_trained_models())
         except (ImportError, Exception) as e:

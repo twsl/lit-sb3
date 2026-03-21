@@ -12,8 +12,8 @@ from lit_sb3.algorithms.td3.policies import Actor, CnnPolicy, MlpPolicy, MultiIn
 from lit_sb3.buffers import ReplayBuffer
 from lit_sb3.core.noise import ActionNoise
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.core.utils import get_parameters_by_name, polyak_update
 from lit_sb3.policies import BasePolicy, ContinuousCritic
+from lit_sb3.utils.tensors import get_parameters_by_name, polyak_update
 
 SelfTD3 = TypeVar("SelfTD3", bound="TD3")
 

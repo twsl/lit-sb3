@@ -1,14 +1,16 @@
 """Probability distributions for reinforcement learning."""
 
-from .base import Distribution, SelfDistribution, sum_independent_dims
-from .bernoulli import BernoulliDistribution, SelfBernoulliDistribution
-from .categorical import CategoricalDistribution, SelfCategoricalDistribution
-from .gaussian import DiagGaussianDistribution, SelfDiagGaussianDistribution
-from .multi_categorical import MultiCategoricalDistribution, SelfMultiCategoricalDistribution
-from .sde import SelfStateDependentNoiseDistribution, StateDependentNoiseDistribution
-from .squashed_gaussian import SelfSquashedDiagGaussianDistribution, SquashedDiagGaussianDistribution
-from .tanh_bijector import TanhBijector
-from .utils import kl_divergence, make_proba_distribution
+from lit_sb3.distributions.base import Distribution, SelfDistribution, sum_independent_dims
+from lit_sb3.distributions.bernoulli import BernoulliDistribution, SelfBernoulliDistribution
+from lit_sb3.distributions.categorical import CategoricalDistribution, SelfCategoricalDistribution
+from lit_sb3.distributions.gaussian import DiagGaussianDistribution, SelfDiagGaussianDistribution
+from lit_sb3.distributions.multi_categorical import MultiCategoricalDistribution, SelfMultiCategoricalDistribution
+from lit_sb3.distributions.sde import SelfStateDependentNoiseDistribution, StateDependentNoiseDistribution
+from lit_sb3.distributions.squashed_gaussian import (
+    SelfSquashedDiagGaussianDistribution,
+    SquashedDiagGaussianDistribution,
+)
+from lit_sb3.distributions.tanh_bijector import TanhBijector
 
 __all__ = [
     "Distribution",
@@ -27,6 +29,4 @@ __all__ = [
     "StateDependentNoiseDistribution",
     "SelfStateDependentNoiseDistribution",
     "TanhBijector",
-    "make_proba_distribution",
-    "kl_divergence",
 ]

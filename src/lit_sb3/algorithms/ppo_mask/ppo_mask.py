@@ -13,10 +13,12 @@ from lit_sb3.buffers.maskable.dict_rollout import MaskableDictRolloutBuffer
 from lit_sb3.buffers.maskable.rollout import MaskableRolloutBuffer
 from lit_sb3.callbacks import BaseCallback
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.core.utils import FloatSchedule, explained_variance, obs_as_tensor
 from lit_sb3.policies import BasePolicy
 from lit_sb3.policies.maskable.actor_critic import MaskableActorCriticPolicy
 from lit_sb3.utils.maskable import get_action_masks, is_masking_supported
+from lit_sb3.utils.math import explained_variance
+from lit_sb3.utils.schedule import FloatSchedule
+from lit_sb3.utils.tensors import obs_as_tensor
 from lit_sb3.vec_env import VecEnv
 
 SelfMaskablePPO = TypeVar("SelfMaskablePPO", bound="MaskablePPO")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from lit_sb3.zoo.utils import ALGOS
+from lit_sb3.utils.registry import ALGOS
 
 
 def _add_load_from_hub_args(parser: argparse.ArgumentParser) -> None:

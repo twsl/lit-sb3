@@ -13,9 +13,11 @@ from lit_sb3.buffers.recurrent.dict_rollout import RecurrentDictRolloutBuffer
 from lit_sb3.buffers.recurrent.rollout import RecurrentRolloutBuffer
 from lit_sb3.callbacks import BaseCallback
 from lit_sb3.core.types import GymEnv, MaybeCallback, RNNStates, Schedule
-from lit_sb3.core.utils import FloatSchedule, explained_variance, obs_as_tensor
 from lit_sb3.policies import BasePolicy
 from lit_sb3.policies.recurrent.recurrent_actor_critic import RecurrentActorCriticPolicy
+from lit_sb3.utils.math import explained_variance
+from lit_sb3.utils.schedule import FloatSchedule
+from lit_sb3.utils.tensors import obs_as_tensor
 from lit_sb3.vec_env import VecEnv
 
 SelfRecurrentPPO = TypeVar("SelfRecurrentPPO", bound="RecurrentPPO")

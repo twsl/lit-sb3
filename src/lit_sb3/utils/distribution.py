@@ -1,16 +1,18 @@
-"""Utility functions for probability distributions."""
+"""Probability distribution factory functions."""
 
 from typing import Any
 
 from gymnasium import spaces
-import numpy as np
-import torch
 
 from lit_sb3.core.preprocessing import get_action_dim
 from lit_sb3.distributions.base import Distribution
 from lit_sb3.distributions.bernoulli import BernoulliDistribution
 from lit_sb3.distributions.categorical import CategoricalDistribution
 from lit_sb3.distributions.gaussian import DiagGaussianDistribution
+from lit_sb3.distributions.maskable.base import MaskableDistribution
+from lit_sb3.distributions.maskable.bernoulli import MaskableBernoulliDistribution
+from lit_sb3.distributions.maskable.categorical import MaskableCategoricalDistribution
+from lit_sb3.distributions.maskable.multi_categorical import MaskableMultiCategoricalDistribution
 from lit_sb3.distributions.multi_categorical import MultiCategoricalDistribution
 from lit_sb3.distributions.sde import StateDependentNoiseDistribution
 from lit_sb3.distributions.squashed_gaussian import SquashedDiagGaussianDistribution
@@ -53,34 +55,27 @@ def make_proba_distribution(
         )
 
 
-def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> torch.Tensor:
-    """Wrapper for the PyTorch implementation of the full form KL Divergence.
+def make_masked_proba_distribution(action_space: spaces.Space) -> MaskableDistribution:
+    """Return an instance of Distribution for the correct type of action space.
 
     Args:
-        dist_true: the p distribution
-        dist_pred: the q distribution
+        action_space: the input action space
 
     Returns:
-        KL(dist_true||dist_pred)
+        the appropriate Distribution object
     """
-    # KL Divergence for different distribution types is out of scope
-    assert dist_true.__class__ == dist_pred.__class__, "Error: input distributions should be the same type"
-
-    # MultiCategoricalDistribution is not a PyTorch Distribution subclass
-    # so we need to implement it ourselves!
-    if isinstance(dist_pred, MultiCategoricalDistribution):
-        assert isinstance(dist_true, MultiCategoricalDistribution)  # already checked above, for mypy
-        assert np.allclose(dist_pred.action_dims, dist_true.action_dims), (
-            f"Error: distributions must have the same input space: {dist_pred.action_dims} != {dist_true.action_dims}"
+    if isinstance(action_space, spaces.Discrete):
+        return MaskableCategoricalDistribution(int(action_space.n))
+    elif isinstance(action_space, spaces.MultiDiscrete):
+        return MaskableMultiCategoricalDistribution(list(action_space.nvec))
+    elif isinstance(action_space, spaces.MultiBinary):
+        assert isinstance(action_space.n, int), (
+            f"Multi-dimensional MultiBinary({action_space.n}) action space is not supported. You can flatten it instead."
         )
-        return torch.stack(
-            [
-                torch.distributions.kl_divergence(p, q)
-                for p, q in zip(dist_true.distribution, dist_pred.distribution, strict=False)
-            ],
-            dim=1,
-        ).sum(dim=1)
-
-    # Use the PyTorch kl_divergence implementation
+        return MaskableBernoulliDistribution(action_space.n)
     else:
-        return torch.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution)  # ty:ignore[invalid-argument-type]
+        raise NotImplementedError(
+            "Error: probability distribution, not implemented for action space"
+            f"of type {type(action_space)}."
+            " Must be of type Gym Spaces: Discrete, MultiDiscrete."
+        )

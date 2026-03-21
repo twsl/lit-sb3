@@ -34,10 +34,11 @@ from lit_sb3.buffers.replay import ReplayBuffer
 from lit_sb3.callbacks import BaseCallback
 from lit_sb3.core.noise import ActionNoise, VectorizedActionNoise
 from lit_sb3.core.types import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
-from lit_sb3.core.utils import safe_mean, should_collect_more_steps
 from lit_sb3.data.replay import ReplayBufferDataset
 from lit_sb3.policies import BasePolicy
-from lit_sb3.utils.save_util import load_from_pkl, save_to_pkl
+from lit_sb3.utils.math import safe_mean
+from lit_sb3.utils.save import load_from_pkl, save_to_pkl
+from lit_sb3.utils.training import should_collect_more_steps
 from lit_sb3.vec_env import VecEnv
 
 SelfOffPolicyAlgorithm = TypeVar("SelfOffPolicyAlgorithm", bound="OffPolicyAlgorithm")

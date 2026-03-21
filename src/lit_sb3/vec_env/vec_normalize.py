@@ -8,9 +8,9 @@ from typing import Any, Optional, Union
 from gymnasium import spaces
 import numpy as np
 
-from lit_sb3.core import utils
 from lit_sb3.core.preprocessing import is_image_space
 from lit_sb3.core.running_mean_std import RunningMeanStd
+from lit_sb3.utils.spaces import check_shape_equal
 from lit_sb3.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -172,7 +172,7 @@ class VecNormalize(VecEnvWrapper):
         self.render_mode = venv.render_mode
 
         # Check that the observation_space shape match
-        utils.check_shape_equal(self.observation_space, venv.observation_space)
+        check_shape_equal(self.observation_space, venv.observation_space)
         self.returns = np.zeros(self.num_envs)
 
     def step_wait(self) -> VecEnvStepReturn:

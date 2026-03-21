@@ -23,7 +23,7 @@ def _worker(  # noqa: C901
     env_fn_wrapper: CloudpickleWrapper,
 ) -> None:
     # Import here to avoid a circular import
-    from lit_sb3.utils.env_util import is_wrapped
+    from lit_sb3.utils.env import is_wrapped
 
     parent_remote.close()
     try:

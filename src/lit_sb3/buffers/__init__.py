@@ -6,9 +6,9 @@ from lit_sb3.buffers.maskable.rollout import MaskableRolloutBuffer, MaskableRoll
 from lit_sb3.buffers.nstep_replay import NStepReplayBuffer
 from lit_sb3.buffers.recurrent.dict_rollout import RecurrentDictRolloutBuffer
 from lit_sb3.buffers.recurrent.rollout import RecurrentRolloutBuffer
-from lit_sb3.buffers.recurrent.utils import create_sequencers, pad, pad_and_flatten
 from lit_sb3.buffers.replay import ReplayBuffer
 from lit_sb3.buffers.rollout import RolloutBuffer
+from lit_sb3.utils.sequence import create_sequencers, pad, pad_and_flatten
 
 __all__ = [
     "BaseBuffer",

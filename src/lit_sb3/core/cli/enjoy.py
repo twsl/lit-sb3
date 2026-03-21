@@ -12,8 +12,12 @@ import numpy as np
 import torch as th
 import yaml
 
-from lit_sb3.core.utils import set_random_seed
-from lit_sb3.zoo.utils import ALGOS, EnvironmentName, StoreDict, create_test_env, get_model_path, get_saved_hyperparams
+from lit_sb3.huggingface.naming_schemes import EnvironmentName
+from lit_sb3.utils.cli import StoreDict
+from lit_sb3.utils.env import create_test_env
+from lit_sb3.utils.model import get_model_path, get_saved_hyperparams
+from lit_sb3.utils.registry import ALGOS
+from lit_sb3.utils.training import set_random_seed
 
 try:
     from lit_sb3.huggingface.load_from_hub import download_from_hub

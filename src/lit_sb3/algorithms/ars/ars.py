@@ -16,9 +16,10 @@ from lit_sb3.algorithms.base import BaseAlgorithm
 from lit_sb3.callbacks import BaseCallback
 from lit_sb3.core.evaluation import evaluate_policy
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.core.utils import FloatSchedule, safe_mean
 from lit_sb3.policies import BasePolicy
-from lit_sb3.utils.save_util import load_from_zip_file
+from lit_sb3.utils.math import safe_mean
+from lit_sb3.utils.save import load_from_zip_file
+from lit_sb3.utils.schedule import FloatSchedule
 from lit_sb3.vec_env.async_eval import AsyncEval
 
 SelfARS = TypeVar("SelfARS", bound="ARS")

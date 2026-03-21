@@ -11,8 +11,10 @@ from lit_sb3.algorithms.off_policy import OffPolicyAlgorithm
 from lit_sb3.algorithms.qrdqn.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, QRDQNPolicy, QuantileNetwork
 from lit_sb3.buffers import ReplayBuffer
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.core.utils import LinearSchedule, get_parameters_by_name, polyak_update, quantile_huber_loss
 from lit_sb3.policies import BasePolicy
+from lit_sb3.utils.math import quantile_huber_loss
+from lit_sb3.utils.schedule import LinearSchedule
+from lit_sb3.utils.tensors import get_parameters_by_name, polyak_update
 
 SelfQRDQN = TypeVar("SelfQRDQN", bound="QRDQN")
 

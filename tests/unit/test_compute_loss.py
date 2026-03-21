@@ -161,8 +161,8 @@ def simple_ppo():
     model._n_updates = 0
     model.env = None
 
-    from lit_sb3.core.utils import FloatSchedule
     from lit_sb3.policies import ActorCriticPolicy
+    from lit_sb3.utils.schedule import FloatSchedule
 
     model.policy = ActorCriticPolicy(
         obs_space,
@@ -196,8 +196,8 @@ def simple_a2c():
     model._n_updates = 0
     model.env = None
 
-    from lit_sb3.core.utils import FloatSchedule
     from lit_sb3.policies import ActorCriticPolicy
+    from lit_sb3.utils.schedule import FloatSchedule
 
     model.policy = ActorCriticPolicy(
         obs_space,

@@ -15,9 +15,9 @@ from lit_sb3.algorithms.on_policy import OnPolicyAlgorithm
 from lit_sb3.algorithms.trpo.policies import CnnPolicy, MlpPolicy, MultiInputPolicy
 from lit_sb3.buffers import RolloutBuffer
 from lit_sb3.core.types import GymEnv, MaybeCallback, RolloutBufferSamples, Schedule
-from lit_sb3.core.utils import conjugate_gradient_solver, explained_variance, flat_grad
-from lit_sb3.distributions import kl_divergence
 from lit_sb3.policies import ActorCriticPolicy, BasePolicy
+from lit_sb3.utils.math import conjugate_gradient_solver, explained_variance, kl_divergence
+from lit_sb3.utils.tensors import flat_grad
 
 SelfTRPO = TypeVar("SelfTRPO", bound="TRPO")
 

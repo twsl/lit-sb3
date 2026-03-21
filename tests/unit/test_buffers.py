@@ -15,8 +15,8 @@ from lit_sb3.buffers.replay import ReplayBuffer
 from lit_sb3.buffers.rollout import RolloutBuffer
 from lit_sb3.core.env_checker import check_env
 from lit_sb3.core.types import DictReplayBufferSamples, ReplayBufferSamples
-from lit_sb3.core.utils import get_device
-from lit_sb3.utils.env_util import make_vec_env
+from lit_sb3.utils.device import get_device
+from lit_sb3.utils.env import make_vec_env
 from lit_sb3.vec_env import VecNormalize
 
 

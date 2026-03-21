@@ -8,7 +8,6 @@ from copy import deepcopy
 import pytest
 import torch as th
 
-from lit_sb3.core.utils import set_random_seed
 from lit_sb3.distributions.bernoulli import BernoulliDistribution
 from lit_sb3.distributions.categorical import CategoricalDistribution
 from lit_sb3.distributions.gaussian import DiagGaussianDistribution
@@ -16,7 +15,8 @@ from lit_sb3.distributions.multi_categorical import MultiCategoricalDistribution
 from lit_sb3.distributions.sde import StateDependentNoiseDistribution
 from lit_sb3.distributions.squashed_gaussian import SquashedDiagGaussianDistribution
 from lit_sb3.distributions.tanh_bijector import TanhBijector
-from lit_sb3.distributions.utils import kl_divergence
+from lit_sb3.utils.math import kl_divergence
+from lit_sb3.utils.training import set_random_seed
 
 N_ACTIONS = 2
 N_FEATURES = 3

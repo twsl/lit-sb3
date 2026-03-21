@@ -1,3 +1,5 @@
+"""Sequence padding utilities for recurrent buffers."""
+
 from collections.abc import Callable
 from functools import partial
 
@@ -25,7 +27,6 @@ def pad(
     Returns:
         (n_seq, max_length, *tensor_shape)
     """
-    # Create sequences given start and end
     seq = [
         torch.tensor(tensor[start : end + 1], device=device)
         for start, end in zip(seq_start_indices, seq_end_indices, strict=False)
@@ -89,8 +90,8 @@ def create_sequencers(
     # Last index is also always end of a sequence
     seq_end_indices = np.concatenate([(seq_start_indices - 1)[1:], np.array([len(episode_starts)])])
 
-    # Create padding method for this minibatch
-    # to avoid repeating arguments (seq_start_indices, seq_end_indices)
+    # Create padding method for this batch
+    # to avoid repeating arguments
     local_pad = partial(pad, seq_start_indices, seq_end_indices, device)
     local_pad_and_flatten = partial(pad_and_flatten, seq_start_indices, seq_end_indices, device)
     return seq_start_indices, local_pad, local_pad_and_flatten

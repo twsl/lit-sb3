@@ -1,11 +1,16 @@
+"""Environment creation and wrapping utilities."""
+
+from __future__ import annotations
+
 from collections.abc import Callable
+from copy import deepcopy
 import os
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import gymnasium as gym
 
-from lit_sb3.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
+from lit_sb3.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv, VecFrameStack, VecNormalize
 from lit_sb3.vec_env.patch_gym import _patch_env
 from lit_sb3.wrappers.atari.atari_wrapper import AtariWrapper
 from lit_sb3.wrappers.monitor import Monitor
@@ -90,13 +95,11 @@ def make_vec_env(
 
     def make_env(rank: int) -> Callable[[], gym.Env]:
         def _init() -> gym.Env:
-            # For type checker:
             assert monitor_kwargs is not None
             assert wrapper_kwargs is not None
             assert env_kwargs is not None
 
             if isinstance(env_id, str):
-                # if the render mode was not specified, we set it to `rgb_array` as default.
                 kwargs = {"render_mode": "rgb_array"}
                 kwargs.update(env_kwargs)
                 try:
@@ -105,34 +108,24 @@ def make_vec_env(
                     env = gym.make(env_id, **env_kwargs)
             else:
                 env = env_id(**env_kwargs)
-                # Patch to support gym 0.21/0.26 and gymnasium
                 env = _patch_env(env)
 
             if seed is not None:
-                # Note: here we only seed the action space
-                # We will seed the env at the next reset
                 env.action_space.seed(seed + rank)
-            # Wrap the env in a Monitor wrapper
-            # to have additional training information
             monitor_path = str(Path(monitor_dir) / str(rank)) if monitor_dir is not None else None
-            # Create the monitor folder if needed
             if monitor_path is not None and monitor_dir is not None:
                 Path(monitor_dir).mkdir(parents=True, exist_ok=True)
             env = Monitor(env, filename=monitor_path, **monitor_kwargs)
-            # Optionally, wrap the environment with the provided wrapper
             if wrapper_class is not None:
                 env = wrapper_class(env, **wrapper_kwargs)
             return env
 
         return _init
 
-    # No custom VecEnv is passed
     if vec_env_cls is None:
-        # Default: use a DummyVecEnv
         vec_env_cls = DummyVecEnv
 
     vec_env = vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
-    # Prepare the seeds for the first reset
     vec_env.seed(seed)
     return vec_env
 
@@ -189,3 +182,92 @@ def make_atari_env(
         monitor_kwargs=monitor_kwargs,
         wrapper_kwargs=wrapper_kwargs,
     )
+
+
+def create_test_env(
+    env_id: str,
+    n_envs: int = 1,
+    stats_path: str | Path | None = None,
+    seed: int = 0,
+    log_dir: str | Path | None = None,
+    should_render: bool = True,
+    hyperparams: dict[str, Any] | None = None,
+    env_kwargs: dict[str, Any] | None = None,
+    vec_env_cls: type[VecEnv] | None = None,
+    vec_env_kwargs: dict[str, Any] | None = None,
+) -> VecEnv:
+    """Create a vectorised environment for evaluating a trained agent.
+
+    Args:
+        env_id: Gymnasium environment ID.
+        n_envs: Number of parallel environments.
+        stats_path: Folder containing saved ``VecNormalize`` stats.
+        seed: Random seed.
+        log_dir: Optional directory for episode reward logging.
+        should_render: Add ``render_mode="human"`` when ``True``.
+        hyperparams: Extra hyperparams (e.g. ``frame_stack``, ``normalize``).
+        env_kwargs: Keyword arguments passed to the env constructor.
+        vec_env_cls: VecEnv class to use (defaults to ``DummyVecEnv``).
+        vec_env_kwargs: Keyword arguments for the VecEnv constructor.
+
+    Returns:
+        Wrapped :class:`~lit_sb3.vec_env.VecEnv`.
+    """
+    from lit_sb3.utils.reflection import get_wrapper_class
+
+    assert hyperparams is not None
+    env_wrapper = get_wrapper_class(hyperparams)
+
+    hyperparams = {} if hyperparams is None else hyperparams.copy()
+
+    if "env_wrapper" in hyperparams:
+        del hyperparams["env_wrapper"]
+
+    if vec_env_cls is None:
+        vec_env_cls = SubprocVecEnv if n_envs > 1 else DummyVecEnv
+
+    env_kwargs = deepcopy(env_kwargs or {})
+    if "render_mode" not in env_kwargs and should_render:
+        env_kwargs["render_mode"] = "human"
+
+    spec = gym.spec(env_id)
+
+    def make_env(**kwargs: Any) -> gym.Env:
+        return spec.make(**kwargs)
+
+    env = make_vec_env(
+        make_env,
+        n_envs=n_envs,
+        monitor_dir=log_dir,
+        seed=seed,
+        wrapper_class=env_wrapper,
+        env_kwargs=env_kwargs,
+        vec_env_cls=vec_env_cls,  # type: ignore[arg-type]
+        vec_env_kwargs=vec_env_kwargs,
+    )
+
+    if "vec_env_wrapper" in hyperparams:
+        vec_env_wrapper = get_wrapper_class(hyperparams, "vec_env_wrapper")
+        assert vec_env_wrapper is not None
+        env = vec_env_wrapper(env)  # type: ignore[arg-type]
+        assert isinstance(env, VecEnv), "vec_env_wrapper must return a VecEnv"
+        del hyperparams["vec_env_wrapper"]
+
+    if stats_path is not None:
+        if hyperparams.get("normalize"):
+            print("Loading running average")
+            print(f"with params: {hyperparams.get('normalize_kwargs', {})}")
+            path_ = Path(stats_path) / "vecnormalize.pkl"
+            if Path(path_).exists():
+                env = VecNormalize.load(path_, env)
+                env.training = False
+                env.norm_reward = False
+            else:
+                raise ValueError(f"VecNormalize stats {path_} not found")
+
+        n_stack = hyperparams.get("frame_stack", 0)
+        if n_stack > 0:
+            print(f"Stacking {n_stack} frames")
+            env = VecFrameStack(env, n_stack)
+
+    return env

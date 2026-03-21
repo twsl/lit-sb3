@@ -5,9 +5,9 @@ from gymnasium import spaces
 import numpy as np
 import torch
 
-from lit_sb3.buffers.recurrent.utils import create_sequencers
 from lit_sb3.buffers.rollout import RolloutBuffer
 from lit_sb3.core.types import RNNStates, TensorDict
+from lit_sb3.utils.sequence import create_sequencers
 from lit_sb3.vec_env import VecNormalize
 
 

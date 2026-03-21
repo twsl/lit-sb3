@@ -29,9 +29,10 @@ from lit_sb3.algorithms.base import BaseAlgorithm
 from lit_sb3.buffers import DictRolloutBuffer, RolloutBuffer
 from lit_sb3.callbacks import BaseCallback
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule
-from lit_sb3.core.utils import obs_as_tensor, safe_mean
 from lit_sb3.data import RolloutDataset
 from lit_sb3.policies import ActorCriticPolicy
+from lit_sb3.utils.math import safe_mean
+from lit_sb3.utils.tensors import obs_as_tensor
 from lit_sb3.vec_env import VecEnv
 
 SelfOnPolicyAlgorithm = TypeVar("SelfOnPolicyAlgorithm", bound="OnPolicyAlgorithm")

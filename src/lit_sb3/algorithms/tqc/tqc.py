@@ -11,8 +11,9 @@ from lit_sb3.algorithms.tqc.policies import Actor, CnnPolicy, Critic, MlpPolicy,
 from lit_sb3.buffers import ReplayBuffer
 from lit_sb3.core.noise import ActionNoise
 from lit_sb3.core.types import GymEnv, MaybeCallback
-from lit_sb3.core.utils import get_parameters_by_name, polyak_update, quantile_huber_loss
 from lit_sb3.policies import BasePolicy
+from lit_sb3.utils.math import quantile_huber_loss
+from lit_sb3.utils.tensors import get_parameters_by_name, polyak_update
 
 SelfTQC = TypeVar("SelfTQC", bound="TQC")
 

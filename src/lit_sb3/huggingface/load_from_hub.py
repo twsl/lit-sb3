@@ -74,7 +74,7 @@ def download_from_hub(
     :raises ValueError: If the target folder already exists and *force* is ``False``.
     """
     # local import to keep the module importable without huggingface_hub installed
-    from lit_sb3.zoo.utils import get_latest_run_id
+    from lit_sb3.utils.system import get_latest_run_id
 
     model_name = ModelName(algo, env_name)
     if repo_name is None:

@@ -19,22 +19,18 @@ import numpy as np
 import torch
 
 from lit_sb3.callbacks import BaseCallback, CallbackList, ConvertCallback, ProgressBarCallback
-from lit_sb3.core import utils
 from lit_sb3.core.noise import ActionNoise
 from lit_sb3.core.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule, TensorDict
-from lit_sb3.core.utils import (
-    FloatSchedule,
-    check_for_correct_spaces,
-    get_device,
-    get_system_info,
-    set_random_seed,
-    update_learning_rate,
-)
 from lit_sb3.policies import BasePolicy
-from lit_sb3.utils.env_util import is_wrapped
+from lit_sb3.utils.device import get_device
+from lit_sb3.utils.env import is_wrapped
 from lit_sb3.utils.logger import Logger
-from lit_sb3.utils.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
+from lit_sb3.utils.save import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
+from lit_sb3.utils.schedule import FloatSchedule
+from lit_sb3.utils.spaces import check_for_correct_spaces
+from lit_sb3.utils.system import configure_logger, get_system_info
+from lit_sb3.utils.training import set_random_seed, update_learning_rate
 from lit_sb3.vec_env import (
     DummyVecEnv,
     VecEnv,
@@ -493,7 +489,7 @@ class BaseAlgorithm(LightningModule):
 
         # Configure logger's outputs if no logger was passed
         if not self._custom_logger:
-            self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+            self._logger = configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
 
         # Create eval callback if needed
         callback = self._init_callback(callback, progress_bar)

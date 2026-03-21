@@ -10,8 +10,11 @@ from typing import Any
 import torch as th
 import yaml
 
-from lit_sb3.core.utils import set_random_seed
-from lit_sb3.zoo.utils import ALGOS, StoreDict, create_test_env, get_model_path, get_saved_hyperparams
+from lit_sb3.utils.cli import StoreDict
+from lit_sb3.utils.env import create_test_env
+from lit_sb3.utils.model import get_model_path, get_saved_hyperparams
+from lit_sb3.utils.registry import ALGOS
+from lit_sb3.utils.training import set_random_seed
 
 
 def _add_push_to_hub_args(parser: argparse.ArgumentParser) -> None:

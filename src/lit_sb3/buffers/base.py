@@ -6,7 +6,7 @@ import torch
 
 from lit_sb3.core.preprocessing import get_action_dim, get_obs_shape
 from lit_sb3.core.types import ReplayBufferSamples, RolloutBufferSamples
-from lit_sb3.core.utils import get_device
+from lit_sb3.utils.device import get_device
 from lit_sb3.vec_env import VecNormalize
 
 

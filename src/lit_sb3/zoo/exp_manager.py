@@ -36,8 +36,12 @@ from lit_sb3.callbacks import (
 )
 from lit_sb3.core.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from lit_sb3.core.preprocessing import is_image_space, is_image_space_channels_first
-from lit_sb3.core.utils import ConstantSchedule
-from lit_sb3.utils.env_util import make_vec_env
+from lit_sb3.huggingface.naming_schemes import EnvironmentName
+from lit_sb3.utils.env import make_vec_env
+from lit_sb3.utils.reflection import get_callback_list, get_class_by_name, get_wrapper_class
+from lit_sb3.utils.registry import ALGOS
+from lit_sb3.utils.schedule import ConstantSchedule, SimpleLinearSchedule
+from lit_sb3.utils.system import get_latest_run_id
 from lit_sb3.vec_env import (
     DummyVecEnv,
     SubprocVecEnv,
@@ -46,15 +50,6 @@ from lit_sb3.vec_env import (
     VecNormalize,
     VecTransposeImage,
     is_vecenv_wrapped,
-)
-from lit_sb3.zoo.utils import (
-    ALGOS,
-    EnvironmentName,
-    SimpleLinearSchedule,
-    get_callback_list,
-    get_class_by_name,
-    get_latest_run_id,
-    get_wrapper_class,
 )
 
 # Optuna is optional

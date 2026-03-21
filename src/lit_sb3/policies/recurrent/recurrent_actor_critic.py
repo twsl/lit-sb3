@@ -6,14 +6,10 @@ import torch
 from torch import nn
 
 from lit_sb3.core.types import RNNStates, Schedule
-from lit_sb3.core.utils import zip_strict
 from lit_sb3.distributions import Distribution
-from lit_sb3.modules import (
-    BaseFeaturesExtractor,
-    FlattenExtractor,
-    MlpExtractor,
-)
+from lit_sb3.modules import BaseFeaturesExtractor, FlattenExtractor, MlpExtractor
 from lit_sb3.policies.actor_critic import ActorCriticPolicy
+from lit_sb3.utils.tensors import zip_strict
 
 
 class RecurrentActorCriticPolicy(ActorCriticPolicy):

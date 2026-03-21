@@ -14,7 +14,6 @@ from torch import nn
 
 from lit_sb3.core.preprocessing import get_action_dim, is_image_space, maybe_transpose, preprocess_obs
 from lit_sb3.core.types import PyTorchObs, Schedule
-from lit_sb3.core.utils import get_device, is_vectorized_observation, obs_as_tensor
 from lit_sb3.distributions import (
     BernoulliDistribution,
     CategoricalDistribution,
@@ -22,7 +21,6 @@ from lit_sb3.distributions import (
     Distribution,
     MultiCategoricalDistribution,
     StateDependentNoiseDistribution,
-    make_proba_distribution,
 )
 from lit_sb3.modules import (
     BaseFeaturesExtractor,
@@ -34,6 +32,10 @@ from lit_sb3.modules import (
 )
 from lit_sb3.policies.actor_critic import ActorCriticPolicy
 from lit_sb3.policies.base import BaseModel, BasePolicy
+from lit_sb3.utils.device import get_device
+from lit_sb3.utils.distribution import make_proba_distribution
+from lit_sb3.utils.spaces import is_vectorized_observation
+from lit_sb3.utils.tensors import obs_as_tensor
 
 SelfBaseModel = TypeVar("SelfBaseModel", bound="BaseModel")
 
