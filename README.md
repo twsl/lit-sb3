@@ -16,11 +16,16 @@
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-border.json)](https://github.com/copier-org/copier)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-PyTorch Lightning version of Stable Baselines
+`lit-sb3` is a [PyTorch Lightning](https://github.com/Lightning-AI/pytorch-lightning) adaptation of [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3). It preserves the familiar SB3 algorithm API where practical, while moving training orchestration into Lightning so reinforcement learning runs can use Lightning callbacks, loggers, checkpointing, precision settings, and distributed strategies.
 
 ## Features
 
-- `...`
+- Stable-Baselines3-style reinforcement learning algorithms implemented on top of PyTorch Lightning
+- Lightning-native training through `RLTrainer`, a subclass of `lightning.Trainer`
+- Environment management through `RLEnvDataModule`, a `LightningDataModule` for RL stages
+- Backwards-friendly `model.learn(total_timesteps=..., env=...)` shim for quick starts
+- Support for Lightning callbacks, loggers, checkpointing, mixed precision, and accelerator strategies
+- Notebook-friendly workflows, MkDocs documentation, and example notebooks in this repository
 
 ## Installation
 
@@ -36,9 +41,15 @@ With [`uv`](https://docs.astral.sh/uv/):
 uv add lit-sb3
 ```
 
+Optional extras are available for specific workflows and environment families:
+
+```bash
+uv add lit-sb3[hub,opt,viz,atari,box2d,classic-control,mujoco,toy-text]
+```
+
 ## How to use it
 
-Most of the code in the library tries to follow the sklearn-like syntax for the Reinforcement Learning algorithms from original Stable Baselines 3.
+Most of the library keeps the familiar sklearn-like style used by Stable-Baselines3.
 
 Here is a quick example of how to train and run PPO on a cartpole environment:
 
@@ -50,11 +61,11 @@ from lit_sb3 import PPO
 env = gym.make("CartPole-v1", render_mode="human")
 
 model = PPO("MlpPolicy", verbose=1)
-model.learn(total_timesteps=10_000, env) # env needs to be passed here instead of algorithm
+model.learn(total_timesteps=10_000, env=env) # env needs to be passed here instead of algorithm
 
 vec_env = model.get_env()
 obs = vec_env.reset()
-for i in range(1000):
+for _ in range(1000):
     action, _states = model.predict(obs, deterministic=True)
     obs, reward, done, info = vec_env.step(action)
     vec_env.render()
@@ -65,28 +76,24 @@ for i in range(1000):
 env.close()
 ```
 
-Or just train a model with a one liner if the environment is registered in Gymnasium and if the policy is registered:
+### Lightning-native workflow
 
-```python
-from lit_sb3 import PPO
-model = PPO("MlpPolicy")
-model.learn(total_timesteps=10_000, env="CartPole-v1")
-```
-
-However, the preferred way to use the library is the `RLTrainer` interface, which gives you more control and flexibility over the training loop and allows you to use all the features of `PyTorch Lightning`, such as callbacks, loggers, and more.
+The preferred interface for anything beyond a minimal example is the Lightning-native workflow.
 
 ```python
 import gymnasium as gym
+
 from lit_sb3 import PPO, RLEnvDataModule, RLTrainer
 
-dm = RLEnvDataModule(
-    train_env=gym.make("CartPole-v1", render_mode="human"),
-    test_env=gym.make("CartPole-v1", render_mode="human")
+model = PPO("MlpPolicy")
+datamodule = RLEnvDataModule(
+    train_env=gym.make("CartPole-v1"),
+    test_env=gym.make("CartPole-v1"),
 )
-trainer = RLTrainer(max_steps=10_000, rl_callback=PPO(), run_name="ppo_cartpole")
+trainer = RLTrainer(max_steps=10_000, run_name="ppo_cartpole")
 
-trainer.fit(model=None, datamodule=dm)
-trainer.test(model=None, datamodule=dm)
+trainer.fit(model, datamodule=datamodule)
+trainer.test(model, datamodule=datamodule)
 ```
 
 ## Docs
