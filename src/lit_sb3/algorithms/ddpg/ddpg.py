@@ -58,7 +58,6 @@ class DDPG(TD3):
     def __init__(
         self,
         policy: str | type[TD3Policy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 1e-3,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
@@ -72,7 +71,6 @@ class DDPG(TD3):
         replay_buffer_kwargs: dict[str, Any] | None = None,
         optimize_memory_usage: bool = False,
         n_steps: int = 1,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -81,7 +79,6 @@ class DDPG(TD3):
     ) -> None:
         super().__init__(
             policy=policy,
-            env=env,
             learning_rate=learning_rate,
             buffer_size=buffer_size,
             learning_starts=learning_starts,
@@ -96,7 +93,6 @@ class DDPG(TD3):
             optimize_memory_usage=optimize_memory_usage,
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -112,12 +108,13 @@ class DDPG(TD3):
         if "n_critics" not in self.policy_kwargs:
             self.policy_kwargs["n_critics"] = 1
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def learn(
         self: SelfDDPG,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "DDPG",
@@ -126,6 +123,7 @@ class DDPG(TD3):
     ) -> SelfDDPG:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,

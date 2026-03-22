@@ -142,9 +142,9 @@ class DummyVecEnv(VecEnv):
         """Check if worker environments are wrapped with a given wrapper."""
         target_envs = self._get_target_envs(indices)
         # Import here to avoid a circular import
-        from lit_sb3.utils import env_util
+        from lit_sb3.utils.env import is_wrapped
 
-        return [env_util.is_wrapped(env_i, wrapper_class) for env_i in target_envs]
+        return [is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 
     def _get_target_envs(self, indices: VecEnvIndices) -> list[gym.Env]:
         indices = self._get_indices(indices)

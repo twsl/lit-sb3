@@ -13,6 +13,7 @@ from lit_sb3.algorithms.sac.sac import SAC
 from lit_sb3.algorithms.td3.td3 import TD3
 from lit_sb3.algorithms.tqc.tqc import TQC
 from lit_sb3.algorithms.trpo.trpo import TRPO
+from lit_sb3.datamodule import RLEnvDataModule
 from lit_sb3.trainer import RLTrainer
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "PPO",
     "QRDQN",
     "RecurrentPPO",
+    "RLEnvDataModule",
     "RLTrainer",
     "SAC",
     "TD3",

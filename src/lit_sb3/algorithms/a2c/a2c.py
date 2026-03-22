@@ -68,7 +68,6 @@ class A2C(OnPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[ActorCriticPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 7e-4,
         n_steps: int = 5,
         gamma: float = 0.99,
@@ -84,7 +83,6 @@ class A2C(OnPolicyAlgorithm):
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         normalize_advantage: bool = False,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -93,7 +91,6 @@ class A2C(OnPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate=learning_rate,
             n_steps=n_steps,
             gamma=gamma,
@@ -106,7 +103,6 @@ class A2C(OnPolicyAlgorithm):
             rollout_buffer_class=rollout_buffer_class,
             rollout_buffer_kwargs=rollout_buffer_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             device=device,
@@ -128,7 +124,7 @@ class A2C(OnPolicyAlgorithm):
             self.policy_kwargs["optimizer_class"] = torch.optim.RMSprop
             self.policy_kwargs["optimizer_kwargs"] = {"alpha": 0.99, "eps": rms_prop_eps, "weight_decay": 0}
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
         # A2C uses the full rollout buffer in a single batch
@@ -203,17 +199,21 @@ class A2C(OnPolicyAlgorithm):
     def learn(
         self: SelfA2C,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 100,
         tb_log_name: str = "A2C",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfA2C:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            default_root_dir=default_root_dir,
         )

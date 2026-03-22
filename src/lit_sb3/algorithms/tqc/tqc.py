@@ -40,7 +40,6 @@ class TQC(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[TQCPolicy],
-        env: GymEnv | str,
         learning_rate: float = 3e-4,
         buffer_size: int = 1_000_000,
         learning_starts: int = 100,
@@ -62,7 +61,6 @@ class TQC(OffPolicyAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -71,7 +69,6 @@ class TQC(OffPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -87,7 +84,6 @@ class TQC(OffPolicyAlgorithm):
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -105,7 +101,7 @@ class TQC(OffPolicyAlgorithm):
         self.ent_coef_optimizer: torch.optim.Adam | None = None
         self.top_quantiles_to_drop_per_net = top_quantiles_to_drop_per_net
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -115,7 +111,7 @@ class TQC(OffPolicyAlgorithm):
         self.batch_norm_stats_target = get_parameters_by_name(self.critic_target, ["running_"])
 
         if self.target_entropy == "auto":
-            self.target_entropy = float(-np.prod(self.env.action_space.shape).astype(np.float32))  # type: ignore[union-attr]
+            self.target_entropy = float(-np.prod(self.action_space.shape).astype(np.float32))  # type: ignore[union-attr]
         else:
             self.target_entropy = float(self.target_entropy)
 
@@ -265,6 +261,7 @@ class TQC(OffPolicyAlgorithm):
     def learn(
         self: SelfTQC,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "TQC",
@@ -273,6 +270,7 @@ class TQC(OffPolicyAlgorithm):
     ) -> SelfTQC:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,

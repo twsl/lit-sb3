@@ -40,7 +40,6 @@ class TRPO(OnPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[ActorCriticPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 1e-3,
         n_steps: int = 2048,
         batch_size: int = 128,
@@ -59,7 +58,6 @@ class TRPO(OnPolicyAlgorithm):
         target_kl: float = 0.01,
         sub_sampling_factor: int = 1,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -68,7 +66,6 @@ class TRPO(OnPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate=learning_rate,
             n_steps=n_steps,
             gamma=gamma,
@@ -81,7 +78,6 @@ class TRPO(OnPolicyAlgorithm):
             rollout_buffer_class=rollout_buffer_class,
             rollout_buffer_kwargs=rollout_buffer_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             device=device,
@@ -96,12 +92,12 @@ class TRPO(OnPolicyAlgorithm):
         )
 
         self.normalize_advantage = normalize_advantage
-        if self.env is not None:
-            buffer_size = self.env.num_envs * self.n_steps
+        if hasattr(self, "n_envs"):
+            buffer_size = self.n_envs * self.n_steps
             if normalize_advantage:
                 assert buffer_size > 1, (
                     "`n_steps * n_envs` must be greater than 1. "
-                    f"Currently n_steps={self.n_steps} and n_envs={self.env.num_envs}"
+                    f"Currently n_steps={self.n_steps} and n_envs={self.n_envs}"
                 )
             untruncated_batches = buffer_size // batch_size
             if buffer_size % batch_size > 0:
@@ -111,7 +107,7 @@ class TRPO(OnPolicyAlgorithm):
                     f"after every {untruncated_batches} untruncated mini-batches, "
                     f"there will be a truncated mini-batch of size {buffer_size % batch_size}\n"
                     f"We recommend using a `batch_size` that is a factor of `n_steps * n_envs`.\n"
-                    f"Info: (n_steps={self.n_steps} and n_envs={self.env.num_envs})",
+                    f"Info: (n_steps={self.n_steps} and n_envs={self.n_envs})",
                     stacklevel=2,
                 )
 
@@ -127,7 +123,7 @@ class TRPO(OnPolicyAlgorithm):
         self._rl_batch_size = None
         self._rl_n_epochs = 1
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _compute_actor_grad(
@@ -317,6 +313,7 @@ class TRPO(OnPolicyAlgorithm):
     def learn(
         self: SelfTRPO,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 1,
         tb_log_name: str = "TRPO",
@@ -325,6 +322,7 @@ class TRPO(OnPolicyAlgorithm):
     ) -> SelfTRPO:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,

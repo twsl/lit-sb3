@@ -94,7 +94,6 @@ class SAC(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[SACPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 3e-4,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
@@ -115,7 +114,6 @@ class SAC(OffPolicyAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -124,7 +122,6 @@ class SAC(OffPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -140,7 +137,6 @@ class SAC(OffPolicyAlgorithm):
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -159,7 +155,7 @@ class SAC(OffPolicyAlgorithm):
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer: torch.optim.Adam | None = None
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -171,7 +167,7 @@ class SAC(OffPolicyAlgorithm):
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == "auto":
             # automatically set target entropy if needed
-            self.target_entropy = float(-np.prod(self.env.action_space.shape).astype(np.float32))  # type: ignore[union-attr]
+            self.target_entropy = float(-np.prod(self.action_space.shape).astype(np.float32))  # type: ignore[union-attr]
         else:
             # Force conversion
             # this will also throw an error for unexpected string
@@ -334,19 +330,23 @@ class SAC(OffPolicyAlgorithm):
     def learn(
         self: SelfSAC,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "SAC",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfSAC:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            default_root_dir=default_root_dir,
         )
 
     def _excluded_save_params(self) -> list[str]:

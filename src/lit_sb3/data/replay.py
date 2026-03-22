@@ -6,6 +6,7 @@ with Lightning's DataLoader-based training loop.
 from __future__ import annotations
 
 from collections.abc import Generator, Iterator
+from itertools import count
 from typing import TYPE_CHECKING
 
 import torch
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class ReplayBufferDataset(IterableDataset):
-    """Infinite IterableDataset for off-policy algorithms.
+    """Finite IterableDataset for off-policy algorithms.
 
     Yields a fixed number of dummy integer tokens. The actual data is NOT
     provided by this dataset - instead, ``training_step`` handles replay buffer
@@ -37,3 +38,16 @@ class ReplayBufferDataset(IterableDataset):
 
     def __len__(self) -> int:
         return self.total_steps
+
+
+class InfiniteReplayBufferDataset(IterableDataset):
+    """Unbounded IterableDataset used when trainer-side RL budget control is authoritative.
+
+    Yields dummy integer tokens forever. The actual data is NOT provided by this
+    dataset - instead, ``training_step`` handles replay buffer sampling. This
+    dataset exists purely to keep Lightning advancing batches until the trainer
+    or callback-driven RL budget requests a stop.
+    """
+
+    def __iter__(self) -> Iterator[int]:
+        yield from count()

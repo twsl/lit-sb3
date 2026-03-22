@@ -29,6 +29,18 @@ def test_replay_buffer_dataset_in_dataloader():
     assert count == 100
 
 
+def test_infinite_replay_buffer_dataset_streams_without_length() -> None:
+    """InfiniteReplayBufferDataset should stream indefinitely without defining length."""
+    from lit_sb3.data.replay import InfiniteReplayBufferDataset
+
+    dataset = InfiniteReplayBufferDataset()
+    iterator = iter(dataset)
+
+    assert [next(iterator) for _ in range(5)] == [0, 1, 2, 3, 4]
+    with pytest.raises(TypeError):
+        len(dataset)
+
+
 def test_rollout_dataset_yields_batches():
     """RolloutDataset should yield batches from the rollout buffer."""
     import gymnasium as gym

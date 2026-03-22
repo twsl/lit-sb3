@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 """Dynamic class and wrapper discovery utilities."""
 
 from collections.abc import Callable
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import gymnasium as gym
 
-from lit_sb3.callbacks import BaseCallback
+if TYPE_CHECKING:
+    from lit_sb3.callbacks.base import BaseCallback
 
 
 def _get_module_name(dotted: str) -> str:
@@ -94,6 +97,8 @@ def get_callback_list(hyperparams: dict[str, Any]) -> list[BaseCallback]:
     * ``{ClassName: kwargs_dict}``, or
     * an already-instantiated :class:`~lit_sb3.callbacks.BaseCallback`.
     """
+    from lit_sb3.callbacks.base import BaseCallback
+
     callbacks: list[BaseCallback] = []
     if "callback" not in hyperparams:
         return callbacks

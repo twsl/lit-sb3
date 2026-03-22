@@ -80,7 +80,6 @@ class DQN(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[DQNPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 1e-4,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
@@ -99,7 +98,6 @@ class DQN(OffPolicyAlgorithm):
         exploration_final_eps: float = 0.05,
         max_grad_norm: float = 10,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -108,7 +106,6 @@ class DQN(OffPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -124,7 +121,6 @@ class DQN(OffPolicyAlgorithm):
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -143,7 +139,7 @@ class DQN(OffPolicyAlgorithm):
         # "epsilon" for the epsilon-greedy exploration
         self.exploration_rate = 0.0
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -185,7 +181,7 @@ class DQN(OffPolicyAlgorithm):
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
-        self.logger.record("rollout/exploration_rate", self.exploration_rate)
+        self.log_metrics({"rollout/exploration_rate": self.exploration_rate})
 
     # ------------------------------------------------------------------
     # Lightning hooks (manual optimization)
@@ -289,19 +285,23 @@ class DQN(OffPolicyAlgorithm):
     def learn(
         self: SelfDQN,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "DQN",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfDQN:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            default_root_dir=default_root_dir,
         )
 
     def _excluded_save_params(self) -> list[str]:

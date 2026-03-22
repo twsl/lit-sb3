@@ -19,7 +19,6 @@ def evaluate_policy(
     callback: Callable[[dict[str, Any], dict[str, Any]], None] | None = None,
     reward_threshold: float | None = None,
     return_episode_rewards: bool = False,
-    warn: bool = True,
     use_masking: bool = False,
 ) -> tuple[float, float] | tuple[list[float], list[int]]:
     """Runs the policy for ``n_eval_episodes`` episodes and outputs the average return.
@@ -76,7 +75,7 @@ def evaluate_policy(
 
     is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
 
-    if not is_monitor_wrapped and warn:
+    if not is_monitor_wrapped:
         warnings.warn(
             "Evaluation environment is not wrapped with a ``Monitor`` wrapper. "
             "This may result in reporting modified episode lengths and rewards, if other wrappers happen to modify these. "

@@ -3,13 +3,7 @@
 from lit_sb3.utils.cli import StoreDict
 from lit_sb3.utils.device import get_device
 from lit_sb3.utils.distribution import make_masked_proba_distribution, make_proba_distribution
-from lit_sb3.utils.env import (
-    create_test_env,
-    is_wrapped,
-    make_atari_env,
-    make_vec_env,
-    unwrap_wrapper,
-)
+from lit_sb3.utils.env import create_test_env, is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from lit_sb3.utils.logger import Logger, configure
 from lit_sb3.utils.maskable import get_action_masks, is_masking_supported
 from lit_sb3.utils.math import (
@@ -19,6 +13,9 @@ from lit_sb3.utils.math import (
     quantile_huber_loss,
     safe_mean,
 )
+from lit_sb3.utils.model import get_hf_trained_models, get_model_path, get_saved_hyperparams, get_trained_models
+from lit_sb3.utils.reflection import get_callback_list, get_class_by_name, get_wrapper_class
+from lit_sb3.utils.registry import ALGOS
 from lit_sb3.utils.save import (
     data_to_json,
     json_to_data,
@@ -54,28 +51,3 @@ from lit_sb3.utils.spaces import (
 from lit_sb3.utils.system import configure_logger, get_latest_run_id, get_system_info
 from lit_sb3.utils.tensors import flat_grad, get_parameters_by_name, obs_as_tensor, polyak_update, zip_strict
 from lit_sb3.utils.training import set_random_seed, should_collect_more_steps, update_learning_rate
-
-# Deferred imports: these modules import from lit_sb3.algorithms or
-# lit_sb3.callbacks, which themselves depend on utils, so they must not be
-# loaded eagerly at package-init time to avoid circular import errors.
-_LAZY: dict[str, str] = {
-    "ALGOS": "lit_sb3.utils.registry",
-    "get_hf_trained_models": "lit_sb3.utils.model",
-    "get_model_path": "lit_sb3.utils.model",
-    "get_saved_hyperparams": "lit_sb3.utils.model",
-    "get_trained_models": "lit_sb3.utils.model",
-    "get_callback_list": "lit_sb3.utils.reflection",
-    "get_class_by_name": "lit_sb3.utils.reflection",
-    "get_wrapper_class": "lit_sb3.utils.reflection",
-}
-
-
-def __getattr__(name: str) -> object:
-    import importlib
-
-    if name in _LAZY:
-        mod = importlib.import_module(_LAZY[name])
-        val = getattr(mod, name)
-        globals()[name] = val  # cache so subsequent accesses skip __getattr__
-        return val
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

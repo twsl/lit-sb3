@@ -188,6 +188,7 @@ class ExperimentManager:
         self.normalize = False
         self.normalize_kwargs: dict[str, Any] = {}
         self.env_wrapper: Callable | None = None
+        self._train_env: Any = None
         self.frame_stack: int | None = None
         self.seed = seed
         self.optimization_log_path = optimization_log_path
@@ -319,14 +320,13 @@ class ExperimentManager:
             return None
         else:
             model = ALGOS[self.algo](
-                env=env,
-                tensorboard_log=self.tensorboard_log,
                 seed=self.seed,
                 verbose=self.verbose,
                 device=self.device,
                 **self._hyperparams,
             )
 
+        self._train_env = env
         self._save_config(saved_hyperparams)
         return model, saved_hyperparams
 
@@ -347,6 +347,8 @@ class ExperimentManager:
 
         if self.callbacks:
             kwargs["callback"] = self.callbacks
+        if self.tensorboard_log is not None:
+            kwargs["default_root_dir"] = self.tensorboard_log
 
         # Special case for ARS with multiple envs
         if self.algo == "ars" and self.n_envs > 1:
@@ -363,6 +365,7 @@ class ExperimentManager:
         try:
             model.learn(
                 self.n_timesteps,
+                env=self._train_env,
                 progress_bar=self.show_progress,
                 **kwargs,
             )
@@ -751,7 +754,6 @@ class ExperimentManager:
             self.trained_agent,
             env=env,
             seed=self.seed,
-            tensorboard_log=self.tensorboard_log,
             verbose=self.verbose,
             device=self.device,
             **hyperparams,
@@ -842,8 +844,6 @@ class ExperimentManager:
             trial_verbosity = self.verbose
 
         model = ALGOS[self.algo](
-            env=env,
-            tensorboard_log=None,
             seed=None,
             verbose=trial_verbosity,
             device=self.device,
@@ -885,6 +885,7 @@ class ExperimentManager:
         try:
             model.learn(
                 self.n_timesteps,
+                env=env,
                 callback=callbacks,
                 **learn_kwargs,
             )
@@ -904,7 +905,9 @@ class ExperimentManager:
         is_pruned = eval_callback.is_pruned
         reward = eval_callback.last_mean_reward
 
-        del model.env, eval_env
+        if model.env is not None:
+            model.env.close()
+        del eval_env
         del model
 
         if is_pruned:
@@ -1071,8 +1074,6 @@ class ExperimentManager:
             trial_verbosity = self.verbose
 
         model = ALGOS[self.algo](
-            env=env,
-            tensorboard_log=None,
             seed=None,
             verbose=trial_verbosity,
             device=self.device,
@@ -1114,6 +1115,7 @@ class ExperimentManager:
         try:
             model.learn(
                 self.n_timesteps,
+                env=env,
                 callback=callbacks,
                 **learn_kwargs,
             )
@@ -1133,7 +1135,9 @@ class ExperimentManager:
         is_pruned = eval_callback.is_pruned
         reward = eval_callback.last_mean_reward
 
-        del model.env, eval_env
+        if model.env is not None:
+            model.env.close()
+        del eval_env
         del model
 
         if is_pruned:

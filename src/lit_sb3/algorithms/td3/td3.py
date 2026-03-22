@@ -83,7 +83,6 @@ class TD3(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[TD3Policy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 1e-3,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
@@ -101,7 +100,6 @@ class TD3(OffPolicyAlgorithm):
         target_policy_noise: float = 0.2,
         target_noise_clip: float = 0.5,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -110,7 +108,6 @@ class TD3(OffPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -126,7 +123,6 @@ class TD3(OffPolicyAlgorithm):
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -139,7 +135,7 @@ class TD3(OffPolicyAlgorithm):
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -249,19 +245,23 @@ class TD3(OffPolicyAlgorithm):
     def learn(
         self: SelfTD3,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "TD3",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfTD3:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            default_root_dir=default_root_dir,
         )
 
     def _excluded_save_params(self) -> list[str]:

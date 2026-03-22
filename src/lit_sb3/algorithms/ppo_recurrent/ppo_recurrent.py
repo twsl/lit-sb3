@@ -76,7 +76,6 @@ class RecurrentPPO(OnPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[RecurrentActorCriticPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 3e-4,
         n_steps: int = 128,
         batch_size: int | None = 128,
@@ -93,7 +92,6 @@ class RecurrentPPO(OnPolicyAlgorithm):
         sde_sample_freq: int = -1,
         target_kl: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -102,7 +100,6 @@ class RecurrentPPO(OnPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate=learning_rate,
             n_steps=n_steps,
             gamma=gamma,
@@ -113,7 +110,6 @@ class RecurrentPPO(OnPolicyAlgorithm):
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             seed=seed,
@@ -135,7 +131,7 @@ class RecurrentPPO(OnPolicyAlgorithm):
         self.target_kl = target_kl
         self._last_lstm_states = None
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -428,24 +424,26 @@ class RecurrentPPO(OnPolicyAlgorithm):
         explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         # Logs
-        self.logger.record("train/entropy_loss", np.mean(entropy_losses))
-        self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
-        self.logger.record("train/value_loss", np.mean(value_losses))
-        self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
-        self.logger.record("train/clip_fraction", np.mean(clip_fractions))
-        self.logger.record("train/loss", loss.item())
-        self.logger.record("train/explained_variance", explained_var)
+        train_metrics: dict[str, Any] = {
+            "train/entropy_loss": float(np.mean(entropy_losses)),
+            "train/policy_gradient_loss": float(np.mean(pg_losses)),
+            "train/value_loss": float(np.mean(value_losses)),
+            "train/approx_kl": float(np.mean(approx_kl_divs)),
+            "train/clip_fraction": float(np.mean(clip_fractions)),
+            "train/loss": loss.item(),
+            "train/explained_variance": explained_var,
+            "train/clip_range": clip_range,
+        }
         if hasattr(self.policy, "log_std"):
-            self.logger.record("train/std", torch.exp(self.policy.log_std).mean().item())
-
-        self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
-        self.logger.record("train/clip_range", clip_range)
+            train_metrics["train/std"] = torch.exp(self.policy.log_std).mean().item()
         if self.clip_range_vf is not None:
-            self.logger.record("train/clip_range_vf", clip_range_vf)
+            train_metrics["train/clip_range_vf"] = clip_range_vf
+        self.log_metrics(train_metrics)
 
     def learn(
         self: SelfRecurrentPPO,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 1,
         tb_log_name: str = "RecurrentPPO",
@@ -454,6 +452,7 @@ class RecurrentPPO(OnPolicyAlgorithm):
     ) -> SelfRecurrentPPO:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,

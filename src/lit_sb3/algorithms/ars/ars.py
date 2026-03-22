@@ -45,7 +45,6 @@ class ARS(BaseAlgorithm):
         policy_kwargs: Keyword arguments to pass to the policy on creation. See :ref:`ars_policies`
         stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
             the reported success rate, mean episode length, and mean reward over
-        tensorboard_log: String with the directory to put tensorboard logs:
         seed: Random seed for the training
         verbose: Verbosity level: 0 no output, 1 info, 2 debug
         device: Torch device to use for training, defaults to "cpu"
@@ -60,7 +59,6 @@ class ARS(BaseAlgorithm):
     def __init__(
         self,
         policy: str | type[ARSPolicy],
-        env: GymEnv | str,
         n_delta: int = 8,
         n_top: int | None = None,
         learning_rate: float | Schedule = 0.02,
@@ -70,7 +68,6 @@ class ARS(BaseAlgorithm):
         n_eval_episodes: int = 1,
         policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         seed: int | None = None,
         verbose: int = 0,
         device: torch.device | str = "cpu",
@@ -78,10 +75,8 @@ class ARS(BaseAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate=learning_rate,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             device=device,
@@ -113,7 +108,7 @@ class ARS(BaseAlgorithm):
         # Important for syncing observation normalization between workers
         self.old_count = 0
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -230,7 +225,6 @@ class ARS(BaseAlgorithm):
                     return_episode_rewards=True,
                     # Increment num_timesteps too (slight mismatch with multi envs)
                     callback=partial(self._trigger_callback, callback=callback, n_envs=self.env.num_envs),  # ty:ignore[unresolved-attribute]
-                    warn=False,
                 )
                 # Update reward to cancel out alive bonus if needed
                 candidate_returns[weights_idx] = sum(episode_rewards) + self.alive_bonus_offset * sum(episode_lengths)  # ty:ignore[no-matching-overload]
@@ -251,13 +245,13 @@ class ARS(BaseAlgorithm):
         """Dump information to the logger."""
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
+        metrics: dict[str, Any] = {
+            "time/fps": fps,
+        }
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:  # ty:ignore[invalid-argument-type, not-subscriptable]
-            self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))  # ty:ignore[not-iterable]
-            self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))  # ty:ignore[not-iterable]
-        self.logger.record("time/fps", fps)
-        self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
-        self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
-        self.logger.dump(step=self.num_timesteps)
+            metrics["rollout/ep_rew_mean"] = safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer])  # ty:ignore[not-iterable]
+            metrics["rollout/ep_len_mean"] = safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer])  # ty:ignore[not-iterable]
+        self.log_metrics(metrics, step=self.num_timesteps)
 
     def _do_one_update(self, callback: BaseCallback, async_eval: AsyncEval | None) -> None:
         """Sample new candidates, evaluate them and then update current policy.
@@ -299,44 +293,79 @@ class ARS(BaseAlgorithm):
         self.weights = self.weights + step_size * ((plus_returns - minus_returns) @ deltas)  # ty:ignore[unsupported-operator]
         self.policy.load_from_vector(self.weights.cpu())
 
-        self.logger.record("train/iterations", self._n_updates, exclude="tensorboard")
-        self.logger.record("train/delta_std", delta_std)
-        self.logger.record("train/learning_rate", learning_rate)
-        self.logger.record("train/step_size", step_size.item())
-        self.logger.record("rollout/return_std", return_std.item())
+        self.log_metrics(
+            {
+                "train/delta_std": delta_std,
+                "train/learning_rate": learning_rate,
+                "train/step_size": step_size.item(),
+                "rollout/return_std": return_std.item(),
+            },
+            step=self.num_timesteps,
+        )
 
         self._n_updates += 1
 
     def learn(
         self: SelfARS,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 1,
         tb_log_name: str = "ARS",
         reset_num_timesteps: bool = True,
         async_eval: AsyncEval | None = None,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfARS:  # ty:ignore[invalid-method-override]
         """Return a trained model.
 
         Args:
             total_timesteps: The total number of samples (env steps) to train on
+            env: Training environment (gym env, env-id string, or VecEnv).
             callback: callback(s) called at every step with state of the algorithm.
             log_every_n_steps: The number of timesteps before logging.
             tb_log_name: the name of the run for TensorBoard logging
             reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
             async_eval: The object for asynchronous evaluation of candidates.
             progress_bar: Display a progress bar using tqdm and rich.
+            default_root_dir: Unused for ARS; accepted for API compatibility.
 
         Returns:
             the trained model
         """
+        import types
+
+        import torch.nn as nn
+
+        from lit_sb3.datamodule import RLEnvDataModule
+        from lit_sb3.vec_env import unwrap_vec_normalize
+
+        if env is None:
+            raise TypeError("learn() requires an env argument (environment removed from model constructor).")
+
+        dm = RLEnvDataModule(train_env=env, verbose=self.verbose)
+        dm.setup("fit")
+        train_env = dm.train_env
+        assert train_env is not None
+
+        if not hasattr(self, "observation_space"):
+            self._init_env_metadata(
+                train_env,
+                getattr(self, "_supported_action_spaces", None),
+                getattr(self, "_support_multi_env", False),
+            )
+        self._vec_normalize_env = unwrap_vec_normalize(train_env)
+
+        # Make self.env resolve through a lightweight holder
+        self._rl_trainer_ref = types.SimpleNamespace(_rl_env=train_env)
+
+        if not isinstance(getattr(self, "policy", None), nn.Module):
+            self._setup_model()
+
         total_steps, callback = self._setup_learn(
             total_timesteps,
             callback,
-            reset_num_timesteps,
             tb_log_name,
-            progress_bar,
         )
 
         callback.on_training_start(locals(), globals())

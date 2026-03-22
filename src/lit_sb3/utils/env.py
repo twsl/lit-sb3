@@ -10,10 +10,34 @@ from typing import Any
 
 import gymnasium as gym
 
-from lit_sb3.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv, VecFrameStack, VecNormalize
+from lit_sb3.core.types import GymEnv
+from lit_sb3.vec_env.base_vec_env import VecEnv
+from lit_sb3.vec_env.dummy_vec_env import DummyVecEnv
 from lit_sb3.vec_env.patch_gym import _patch_env
+from lit_sb3.vec_env.subproc_vec_env import SubprocVecEnv
+from lit_sb3.vec_env.vec_frame_stack import VecFrameStack
 from lit_sb3.wrappers.atari.atari_wrapper import AtariWrapper
 from lit_sb3.wrappers.monitor import Monitor
+
+
+def maybe_make_env(env: GymEnv | str, verbose: int) -> GymEnv:
+    """If env is a string, make the environment; otherwise, return env.
+
+    Args:
+        env: The environment to learn from.
+        verbose: Verbosity level: 0 for no output, 1 for indicating if environment is created
+            :return A Gym (vector) environment.
+    """
+    if isinstance(env, str):
+        env_id = env
+        if verbose >= 1:
+            print(f"Creating environment from the given name '{env_id}'")
+        # Set render_mode to `rgb_array` as default, so we can record video
+        try:
+            env = gym.make(env_id, render_mode="rgb_array")
+        except TypeError:
+            env = gym.make(env_id)
+    return env
 
 
 def unwrap_wrapper(env: gym.Env, wrapper_class: type[gym.Wrapper]) -> gym.Wrapper | None:
@@ -255,6 +279,8 @@ def create_test_env(
 
     if stats_path is not None:
         if hyperparams.get("normalize"):
+            from lit_sb3.vec_env.vec_normalize import VecNormalize
+
             print("Loading running average")
             print(f"with params: {hyperparams.get('normalize_kwargs', {})}")
             path_ = Path(stats_path) / "vecnormalize.pkl"

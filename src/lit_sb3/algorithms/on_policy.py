@@ -59,7 +59,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         rollout_buffer_class: Buffer class (auto-selected if None)
         rollout_buffer_kwargs: Extra kwargs for the buffer constructor
         stats_window_size: Episode-info averaging window
-        tensorboard_log: TensorBoard log directory
         monitor_wrapper: Wrap env in Monitor
         policy_kwargs: Extra kwargs passed to the policy
         verbose: Verbosity level
@@ -75,7 +74,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     def __init__(
         self,
         policy: str | type[ActorCriticPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule,
         n_steps: int,
         gamma: float,
@@ -88,7 +86,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         rollout_buffer_class: type[RolloutBuffer] | None = None,
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         monitor_wrapper: bool = True,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
@@ -99,7 +96,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     ) -> None:
         super().__init__(
             policy=policy,
-            env=env,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
@@ -110,7 +106,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             monitor_wrapper=monitor_wrapper,
             seed=seed,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )
         self.n_steps = n_steps
@@ -122,7 +117,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.rollout_buffer_class = rollout_buffer_class
         self.rollout_buffer_kwargs = rollout_buffer_kwargs or {}
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     # ------------------------------------------------------------------
@@ -213,6 +208,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 n_rollout_steps=self.n_steps,
             )
 
+        if not getattr(self, "_rollout_ok", True):
+            self.trainer.should_stop = True
+            return
+
         self._rl_iteration += 1
         self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
         self._update_learning_rate(self.policy.optimizer)
@@ -293,9 +292,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
             self.num_timesteps += env.num_envs
+            budget_reached = self._has_reached_rl_budget()
 
             callback.update_locals(locals())
-            if not callback.on_step():
+            continue_training = callback.on_step()
+            if not continue_training and not budget_reached:
                 return False
 
             self._update_info_buffer(infos, dones)
@@ -377,30 +378,45 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     def learn(
         self: SelfOnPolicyAlgorithm,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = None,
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfOnPolicyAlgorithm:
         """Train for ``total_timesteps`` environment steps.
 
-        Delegates to :class:`~lit_sb3.trainer.RLTrainer`.  For full control
-        over Lightning Trainer settings (precision, loggers, plugins …) construct
-        ``RLTrainer`` directly::
+        Args:
+            total_timesteps: Total environment steps to collect.
+            env: Training environment (gym env, env-id string, or VecEnv).
+            callback: SB3-style callback(s) fired at each RL step.
+            log_every_n_steps: Logging frequency.
+            tb_log_name: TensorBoard run name.
+            reset_num_timesteps: Whether to reset the step counter.
+            progress_bar: Display a progress bar.
+            default_root_dir: Root directory for logs and checkpoints.
 
-            RLTrainer(max_steps=total_timesteps, ...).fit(model)
+        Returns:
+            The trained model.
         """
-        from lit_sb3.trainer import RLTrainer
+        from lit_sb3.datamodule import RLEnvDataModule
 
-        return RLTrainer(  # type: ignore[return-value]
+        if env is None:
+            raise TypeError("learn() requires an env argument (environment removed from model constructor).")
+
+        dm = RLEnvDataModule(train_env=env, verbose=self.verbose)
+        trainer = self.create_trainer(
             max_steps=total_timesteps,
-            rl_callback=callback,
+            callback=callback,
             log_every_n_steps=log_every_n_steps,
-            tb_log_name=tb_log_name,
+            run_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             enable_progress_bar=progress_bar,
-        ).fit(self)
+            default_root_dir=default_root_dir,
+        )
+        return trainer.fit(self, datamodule=dm)  # type: ignore[return-value]
 
     def dump_logs(self, iteration: int = 0) -> None:
         """Write log data (kept for SB3 API compatibility)."""
@@ -409,17 +425,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
+        metrics: dict[str, Any] = {
+            "time/fps": fps,
+        }
         if iteration > 0:
-            self.logger.record("time/iterations", iteration, exclude="tensorboard")
+            metrics["time/iterations"] = iteration
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-            self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
-            self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
-        self.logger.record("time/fps", fps)
-        self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
-        self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
+            metrics["rollout/ep_rew_mean"] = safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer])
+            metrics["rollout/ep_len_mean"] = safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer])
         if len(self.ep_success_buffer) > 0:
-            self.logger.record("rollout/success_rate", safe_mean(self.ep_success_buffer))
-        self.logger.dump(step=self.num_timesteps)
+            metrics["rollout/success_rate"] = safe_mean(self.ep_success_buffer)
+        self.log_metrics(metrics, step=self.num_timesteps)
 
     def _get_torch_save_params(self) -> tuple[list[str], list[str]]:
         state_dicts = ["policy", "policy.optimizer"]

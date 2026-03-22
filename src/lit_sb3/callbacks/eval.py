@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 import warnings
 
 import gymnasium as gym
+import lightning as L  # noqa: N812
 import numpy as np
 
 from lit_sb3.core.evaluation import evaluate_policy
@@ -89,6 +90,15 @@ class EvalCallback(EventCallback):
         # For computing success rate
         self._is_success_buffer: list[bool] = []
         self.evaluations_successes: list[list[bool]] = []
+        self._lightning_logger: Any = None
+
+    @staticmethod
+    def _resolve_lightning_logger(trainer: L.Trainer) -> Any:
+        loggers = getattr(trainer, "loggers", [])
+        return loggers[0] if loggers else None
+
+    def on_train_start(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
+        self._lightning_logger = self._resolve_lightning_logger(trainer)
 
     def _init_callback(self) -> None:
         # Does not work in some corner cases, where the wrapper is not the same
@@ -181,19 +191,17 @@ class EvalCallback(EventCallback):
             if self.verbose >= 1:
                 print(f"Eval num_timesteps={self.num_timesteps}, episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
                 print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
-            # Add to current Logger
-            self.logger.record("eval/mean_reward", float(mean_reward))
-            self.logger.record("eval/mean_ep_length", mean_ep_length)
-
+            eval_metrics: dict[str, Any] = {
+                "eval/mean_reward": float(mean_reward),
+                "eval/mean_ep_length": mean_ep_length,
+            }
             if len(self._is_success_buffer) > 0:
                 success_rate = np.mean(self._is_success_buffer)
                 if self.verbose >= 1:
                     print(f"Success rate: {100 * success_rate:.2f}%")
-                self.logger.record("eval/success_rate", success_rate)
-
-            # Dump log so the evaluation results are printed with the correct timestep
-            self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
-            self.logger.dump(self.num_timesteps)
+                eval_metrics["eval/success_rate"] = float(success_rate)
+            if self._lightning_logger is not None:
+                self._lightning_logger.log_metrics(eval_metrics, step=self.num_timesteps)
 
             if mean_reward > self.best_mean_reward:
                 if self.verbose >= 1:

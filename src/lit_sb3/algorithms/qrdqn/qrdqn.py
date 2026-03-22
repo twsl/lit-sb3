@@ -40,7 +40,6 @@ class QRDQN(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[QRDQNPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 5e-5,
         buffer_size: int = 1_000_000,
         learning_starts: int = 100,
@@ -59,7 +58,6 @@ class QRDQN(OffPolicyAlgorithm):
         exploration_final_eps: float = 0.01,
         max_grad_norm: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -68,7 +66,6 @@ class QRDQN(OffPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -84,7 +81,6 @@ class QRDQN(OffPolicyAlgorithm):
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -102,7 +98,7 @@ class QRDQN(OffPolicyAlgorithm):
         self.exploration_fraction = exploration_fraction
         self.exploration_rate = 0.0
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -230,6 +226,7 @@ class QRDQN(OffPolicyAlgorithm):
     def learn(
         self: SelfQRDQN,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "QRDQN",
@@ -238,6 +235,7 @@ class QRDQN(OffPolicyAlgorithm):
     ) -> SelfQRDQN:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,

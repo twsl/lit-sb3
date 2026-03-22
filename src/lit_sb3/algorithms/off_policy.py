@@ -2,8 +2,8 @@
 
 Architecture:
   * ``automatic_optimization = False`` — all gradient calls are explicit.
-  * ``train_dataloader`` returns a ``ReplayBufferDataset`` that drives one
-    training step per ``total_timesteps`` index.
+    * ``train_dataloader`` returns an ``InfiniteReplayBufferDataset`` that keeps
+        Lightning advancing batches until the trainer-owned RL budget stops the run.
   * ``training_step`` (overridden by subclasses) collects env transitions
     and performs manual gradient updates.
   * ``learn()`` wraps Lightning ``Trainer.fit`` while keeping the SB3 API.
@@ -34,7 +34,7 @@ from lit_sb3.buffers.replay import ReplayBuffer
 from lit_sb3.callbacks import BaseCallback
 from lit_sb3.core.noise import ActionNoise, VectorizedActionNoise
 from lit_sb3.core.types import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
-from lit_sb3.data.replay import ReplayBufferDataset
+from lit_sb3.data.replay import InfiniteReplayBufferDataset
 from lit_sb3.policies import BasePolicy
 from lit_sb3.utils.math import safe_mean
 from lit_sb3.utils.save import load_from_pkl, save_to_pkl
@@ -71,7 +71,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         n_steps: N-step returns (>1 uses NStepReplayBuffer)
         policy_kwargs: Extra kwargs passed to the policy
         stats_window_size: Episode-info averaging window
-        tensorboard_log: TensorBoard log directory
         verbose: Verbosity level
         device: Torch device
         support_multi_env: Allow multiple parallel envs
@@ -92,7 +91,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def __init__(
         self,
         policy: str | type[BasePolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule,
         buffer_size: int = 1_000_000,
         learning_starts: int = 100,
@@ -108,7 +106,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         n_steps: int = 1,
         policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         verbose: int = 0,
         device: torch.device | str = "auto",
         support_multi_env: bool = False,
@@ -122,11 +119,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     ) -> None:
         super().__init__(
             policy=policy,
-            env=env,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             support_multi_env=support_multi_env,
@@ -220,13 +215,18 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         raise NotImplementedError(f"{self.__class__.__name__} must implement `configure_optimizers`.")
 
     def train_dataloader(self) -> DataLoader:
-        """Return an infinite-like dataset that drives the training loop.
+        """Return an unbounded dataset that drives the training loop.
 
-        Each integer token yielded by ``ReplayBufferDataset`` triggers one
+        Each integer token yielded by ``InfiniteReplayBufferDataset`` triggers one
         call to ``training_step``, which handles env interaction + gradient updates.
         """
-        dataset = ReplayBufferDataset(self._total_timesteps)
+        dataset = InfiniteReplayBufferDataset()
         return DataLoader(dataset, batch_size=1, num_workers=0)
+
+    def on_train_batch_end(self, outputs: Any, batch: Any, batch_idx: int) -> None:
+        del outputs, batch, batch_idx
+        if self._has_reached_rl_budget():
+            self.trainer.should_stop = True
 
     def training_step(self, batch: Any, batch_idx: int) -> None:
         """One off-policy iteration: collect env transitions + gradient updates.
@@ -339,9 +339,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             new_obs, rewards, dones, infos = env.step(actions)
             self.num_timesteps += env.num_envs
             num_collected_steps += 1
+            budget_reached = self._has_reached_rl_budget()
 
             callback.update_locals(locals())
-            if not callback.on_step():
+            continue_training = callback.on_step()
+            if not continue_training and not budget_reached:
                 return RolloutReturn(
                     num_collected_steps * env.num_envs,
                     num_collected_episodes,
@@ -363,6 +365,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     if log_interval is not None and self._episode_num % log_interval == 0:
                         self.dump_logs()
 
+            if budget_reached:
+                break
+
         callback.on_rollout_end()
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)
 
@@ -376,18 +381,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
-        self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
+        metrics: dict[str, Any] = {
+            "time/fps": fps,
+        }
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-            self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
-            self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
-        self.logger.record("time/fps", fps)
-        self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
-        self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
+            metrics["rollout/ep_rew_mean"] = safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer])
+            metrics["rollout/ep_len_mean"] = safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer])
         if self.use_sde:
-            self.logger.record("train/std", (self.actor.get_std()).mean().item())  # type: ignore[operator]
+            metrics["train/std"] = (self.actor.get_std()).mean().item()  # type: ignore[operator]
         if len(self.ep_success_buffer) > 0:
-            self.logger.record("rollout/success_rate", safe_mean(self.ep_success_buffer))
-        self.logger.dump(step=self.num_timesteps)
+            metrics["rollout/success_rate"] = safe_mean(self.ep_success_buffer)
+        self.log_metrics(metrics, step=self.num_timesteps)
 
     # ------------------------------------------------------------------
     # Replay buffer I/O
@@ -422,16 +426,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        reset_num_timesteps: bool = True,
-        tb_log_name: str = "run",
-        progress_bar: bool = False,
+        run_name: str = "run",
     ) -> tuple[int, BaseCallback]:
         replay_buffer = self.replay_buffer
         truncate_last_traj = (
-            self.optimize_memory_usage
-            and reset_num_timesteps
-            and replay_buffer is not None
-            and (replay_buffer.full or replay_buffer.pos > 0)
+            self.optimize_memory_usage and replay_buffer is not None and (replay_buffer.full or replay_buffer.pos > 0)
         )
         if truncate_last_traj:
             warnings.warn(
@@ -453,7 +452,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         ):
             self.action_noise = VectorizedActionNoise(self.action_noise, self.env.num_envs)
 
-        return super()._setup_learn(total_timesteps, callback, reset_num_timesteps, tb_log_name, progress_bar)
+        return super()._setup_learn(total_timesteps, callback, run_name)
 
     # ------------------------------------------------------------------
     # RLTrainer protocol
@@ -474,7 +473,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._log_interval = log_every_n_steps
 
     def _rl_max_epochs(self, total_timesteps: int) -> int:
-        # Off-policy uses a single epoch driven by ReplayBufferDataset length.
+        # Off-policy uses a single epoch and stops through trainer-owned RL budget checks.
         return 1
 
     # _pre_fit_hook: no pre-collection needed for off-policy; default no-op is used.
@@ -486,27 +485,42 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def learn(
         self: SelfOffPolicyAlgorithm,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = None,
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfOffPolicyAlgorithm:
         """Train for ``total_timesteps`` env steps.
 
-        Delegates to :class:`~lit_sb3.trainer.RLTrainer`.  For full control
-        over Lightning Trainer settings (precision, loggers, plugins …) construct
-        ``RLTrainer`` directly::
+        Args:
+            total_timesteps: Total environment steps to collect.
+            env: Training environment (gym env, env-id string, or VecEnv).
+            callback: SB3-style callback(s) fired at each RL step.
+            log_every_n_steps: Logging frequency.
+            tb_log_name: TensorBoard run name.
+            reset_num_timesteps: Whether to reset the step counter.
+            progress_bar: Display a progress bar.
+            default_root_dir: Root directory for logs and checkpoints.
 
-            RLTrainer(max_steps=total_timesteps, ...).fit(model)
+        Returns:
+            The trained model.
         """
-        from lit_sb3.trainer import RLTrainer
+        from lit_sb3.datamodule import RLEnvDataModule
 
-        return RLTrainer(  # type: ignore[return-value]
+        if env is None:
+            raise TypeError("learn() requires an env argument (environment removed from model constructor).")
+
+        dm = RLEnvDataModule(train_env=env, verbose=self.verbose)
+        trainer = self.create_trainer(
             max_steps=total_timesteps,
-            rl_callback=callback,
+            callback=callback,
             log_every_n_steps=log_every_n_steps,
-            tb_log_name=tb_log_name,
+            run_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             enable_progress_bar=progress_bar,
-        ).fit(self)
+            default_root_dir=default_root_dir,
+        )
+        return trainer.fit(self, datamodule=dm)  # type: ignore[return-value]

@@ -18,18 +18,19 @@ from lightning import LightningModule
 import numpy as np
 import torch
 
-from lit_sb3.callbacks import BaseCallback, CallbackList, ConvertCallback, ProgressBarCallback
+from lit_sb3.callbacks.base import BaseCallback, CallbackList
+from lit_sb3.callbacks.convert import ConvertCallback
+from lit_sb3.callbacks.progress import ProgressBarCallback
 from lit_sb3.core.noise import ActionNoise
 from lit_sb3.core.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
 from lit_sb3.core.types import GymEnv, MaybeCallback, Schedule, TensorDict
 from lit_sb3.policies import BasePolicy
 from lit_sb3.utils.device import get_device
-from lit_sb3.utils.env import is_wrapped
-from lit_sb3.utils.logger import Logger
+from lit_sb3.utils.env import is_wrapped, maybe_make_env
 from lit_sb3.utils.save import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from lit_sb3.utils.schedule import FloatSchedule
 from lit_sb3.utils.spaces import check_for_correct_spaces
-from lit_sb3.utils.system import configure_logger, get_system_info
+from lit_sb3.utils.system import get_system_info
 from lit_sb3.utils.training import set_random_seed, update_learning_rate
 from lit_sb3.vec_env import (
     DummyVecEnv,
@@ -43,26 +44,6 @@ from lit_sb3.vec_env.patch_gym import _convert_space, _patch_env
 from lit_sb3.wrappers.monitor import Monitor
 
 SelfBaseAlgorithm = TypeVar("SelfBaseAlgorithm", bound="BaseAlgorithm")
-
-
-def maybe_make_env(env: GymEnv | str, verbose: int) -> GymEnv:
-    """If env is a string, make the environment; otherwise, return env.
-
-    Args:
-        env: The environment to learn from.
-        verbose: Verbosity level: 0 for no output, 1 for indicating if environment is created
-            :return A Gym (vector) environment.
-    """
-    if isinstance(env, str):
-        env_id = env
-        if verbose >= 1:
-            print(f"Creating environment from the given name '{env_id}'")
-        # Set render_mode to `rgb_array` as default, so we can record video
-        try:
-            env = gym.make(env_id, render_mode="rgb_array")
-        except TypeError:
-            env = gym.make(env_id)
-    return env
 
 
 class BaseAlgorithm(LightningModule):
@@ -85,12 +66,10 @@ class BaseAlgorithm(LightningModule):
         policy_kwargs: Additional arguments to be passed to the policy on creation
         stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
             the reported success rate, mean episode length, and mean reward over
-        tensorboard_log: the log location for tensorboard (if None, no logging)
         verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
             debug messages
-        device: Device on which the code should run.
-            By default, it will try to use a Cuda compatible device and fallback to cpu
-            if it is not possible.
+        device: Compatibility-only constructor argument.
+            Runtime device placement is resolved by RLTrainer during fit.
         support_multi_env: Whether the algorithm supports training
             with multiple environments (as in A2C)
         monitor_wrapper: When creating an environment, whether to wrap it
@@ -110,16 +89,13 @@ class BaseAlgorithm(LightningModule):
     action_space: spaces.Space
     n_envs: int
     lr_schedule: Schedule
-    _logger: Logger
 
     def __init__(
         self,
         policy: str | type[BasePolicy],
-        env: GymEnv | str | None,
         learning_rate: float | Schedule,
         policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | pathlib.Path | None = None,
         verbose: int = 0,
         device: torch.device | str = "auto",
         support_multi_env: bool = False,
@@ -135,15 +111,10 @@ class BaseAlgorithm(LightningModule):
             self.policy_class = self._get_policy_from_name(policy)
         else:
             self.policy_class = policy
-
-        # Store requested device for early setup (policy/buffer creation in __init__).
-        # Lightning will take ownership of the device once trainer.fit() is called.
-        self._requested_device = get_device(device)
-        if verbose >= 1:
-            print(f"Using {self._requested_device} device")
-
+        self.policy = None  # type: ignore[assignment]
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
+        del device
 
         self.num_timesteps = 0
         # Used for updating schedules
@@ -154,7 +125,6 @@ class BaseAlgorithm(LightningModule):
         self.action_noise: ActionNoise | None = None
         self.start_time = 0.0
         self.learning_rate = learning_rate
-        self.tensorboard_log = tensorboard_log
         self._last_obs = None  # type: Optional[Union[np.ndarray, dict[str, np.ndarray]]]
         self._last_episode_starts = None  # type: Optional[np.ndarray]
         # When using VecNormalize:
@@ -174,77 +144,133 @@ class BaseAlgorithm(LightningModule):
         self._n_updates = 0  # type: int
         # Whether the user passed a custom logger or not
         self._custom_logger = False
-        self.env: VecEnv | None = None
+        self._trainer_logger: Any = None
         self._vec_normalize_env: VecNormalize | None = None
+        self._monitor_wrapper = monitor_wrapper
+        self._support_multi_env = support_multi_env
+        self._supported_action_spaces = supported_action_spaces
+        self._policy_name = policy if isinstance(policy, str) else None
 
-        # Create and wrap the env if needed
-        if env is not None:
-            env = maybe_make_env(env, self.verbose)
-            env = self._wrap_env(env, self.verbose, monitor_wrapper)
+    def _init_env_metadata(
+        self,
+        env: VecEnv,
+        supported_action_spaces: tuple[type[spaces.Space], ...] | None = None,
+        support_multi_env: bool = False,
+    ) -> None:
+        """Extract and validate env metadata without storing the env."""
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
+        self.n_envs = env.num_envs
+        self._vec_normalize_env = unwrap_vec_normalize(env)
 
-            self.observation_space = env.observation_space
-            self.action_space = env.action_space
-            self.n_envs = env.num_envs
-            self.env = env
+        if supported_action_spaces is not None:
+            assert isinstance(self.action_space, supported_action_spaces), (
+                f"The algorithm only supports {supported_action_spaces} as action spaces "
+                f"but {self.action_space} was provided"
+            )
 
-            # get VecNormalize object if needed
-            self._vec_normalize_env = unwrap_vec_normalize(env)
+        if not support_multi_env and self.n_envs > 1:
+            raise ValueError(
+                "Error: the model does not support multiple envs; it requires a single vectorized environment."
+            )
 
-            if supported_action_spaces is not None:
-                assert isinstance(self.action_space, supported_action_spaces), (
-                    f"The algorithm only supports {supported_action_spaces} as action spaces "
-                    f"but {self.action_space} was provided"
-                )
+        # Catch common mistake: using MlpPolicy/CnnPolicy instead of MultiInputPolicy
+        if self._policy_name in ["MlpPolicy", "CnnPolicy"] and isinstance(self.observation_space, spaces.Dict):
+            raise ValueError(
+                f"You must use `MultiInputPolicy` when working with dict observation space, not {self._policy_name}"
+            )
 
-            if not support_multi_env and self.n_envs > 1:
-                raise ValueError(
-                    "Error: the model does not support multiple envs; it requires a single vectorized environment."
-                )
+        if self.use_sde and not isinstance(self.action_space, spaces.Box):
+            raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
-            # Catch common mistake: using MlpPolicy/CnnPolicy instead of MultiInputPolicy
-            if policy in ["MlpPolicy", "CnnPolicy"] and isinstance(self.observation_space, spaces.Dict):
-                raise ValueError(
-                    f"You must use `MultiInputPolicy` when working with dict observation space, not {policy}"
-                )
+        if isinstance(self.action_space, spaces.Box):
+            assert np.all(np.isfinite(np.array([self.action_space.low, self.action_space.high]))), (
+                "Continuous action space must have a finite lower and upper bound"
+            )
 
-            if self.use_sde and not isinstance(self.action_space, spaces.Box):
-                raise ValueError(
-                    "generalized State-Dependent Exploration (gSDE) can only be used with continuous actions."
-                )
-
-            if isinstance(self.action_space, spaces.Box):
-                assert np.all(np.isfinite(np.array([self.action_space.low, self.action_space.high]))), (
-                    "Continuous action space must have a finite lower and upper bound"
-                )
+    @property
+    def env(self) -> VecEnv | None:
+        """Return the active training env from the trainer, or None."""
+        # Try the RLTrainer reference (set before _setup_learn)
+        rl_trainer = getattr(self, "_rl_trainer_ref", None)
+        if rl_trainer is not None and hasattr(rl_trainer, "_rl_env"):
+            return rl_trainer._rl_env
+        # Try Lightning's trainer (set after super().fit())
+        try:
+            trainer = self.trainer
+            if trainer is not None and hasattr(trainer, "_rl_env"):
+                return trainer._rl_env  # type: ignore[union-attr]
+        except RuntimeError:
+            pass
+        return None
 
     @property
     def device(self) -> torch.device:
         """Return current device (Lightning-aware)."""
+        rl_trainer = getattr(self, "_rl_trainer_ref", None)
+        if rl_trainer is not None:
+            strategy = getattr(rl_trainer, "strategy", None)
+            root_device = getattr(strategy, "root_device", None)
+            if isinstance(root_device, torch.device):
+                return root_device
+
+        setup_device_override = getattr(self, "_setup_device_override", None)
+        if isinstance(setup_device_override, torch.device):
+            return setup_device_override
+
         try:
             # After trainer attaches, use Lightning's device tracking
             return super().device
         except Exception:
-            return self._requested_device
+            return torch.device("cpu")
 
-    def create_trainer(self, progress_bar: bool = False) -> L.Trainer:
-        return L.Trainer(
-            max_epochs=1,
-            enable_progress_bar=progress_bar,
-            enable_model_summary=False,
-            enable_checkpointing=False,
-            logger=False,
-            accelerator="cpu" if self.device == torch.device("cpu") else "gpu",
-            devices=1,
+    def create_trainer(
+        self,
+        max_steps: int,
+        callback: MaybeCallback = None,
+        run_name: str = "run",
+        log_every_n_steps: int | None = None,
+        enable_progress_bar: bool | None = None,
+        reset_num_timesteps: bool = True,
+        default_root_dir: str | pathlib.Path | None = None,
+    ) -> L.Trainer:
+        """Create an RLTrainer configured like the SB3-compatible learn shim.
+
+        Args:
+            max_steps: Total environment steps to collect.
+            callback: SB3-style callback(s) fired at each RL step.
+            run_name: The run name used in loggers.
+            log_every_n_steps: Logging frequency (if None, defaults to ``_default_log_every_n_steps``).
+            enable_progress_bar: Whether to display a progress bar using tqdm and rich.
+            default_root_dir: Root directory for logs and checkpoints.
+
+        Returns:
+            An RLTrainer configured with the same defaults used by learn().
+        """
+        from lit_sb3.trainer import RLTrainer
+
+        trainer_kwargs: dict[str, Any] = dict(
+            max_steps=max_steps,
+            rl_callback=callback,
+            run_name=run_name,
+            log_every_n_steps=log_every_n_steps,
+            enable_progress_bar=enable_progress_bar,
         )
+        if default_root_dir is not None:
+            trainer_kwargs["default_root_dir"] = default_root_dir
+        trainer = RLTrainer(**trainer_kwargs)
+        trainer._rl_reset_num_timesteps = reset_num_timesteps
+        return trainer
 
     def on_fit_start(self) -> None:
         """Called by Lightning before training starts. Initialise env observation."""
         if self.ep_info_buffer is None:
             self.ep_info_buffer = deque(maxlen=self._stats_window_size)
             self.ep_success_buffer = deque(maxlen=self._stats_window_size)
-        if self._last_obs is None and self.env is not None:
-            self._last_obs = self.env.reset()
-            self._last_episode_starts = np.ones((self.env.num_envs,), dtype=bool)
+        env = self.env
+        if self._last_obs is None and env is not None:
+            self._last_obs = env.reset()
+            self._last_episode_starts = np.ones((env.num_envs,), dtype=bool)
             if self._vec_normalize_env is not None:
                 self._last_original_obs = self._vec_normalize_env.get_original_obs()
         self.start_time = time.time_ns()
@@ -307,23 +333,41 @@ class BaseAlgorithm(LightningModule):
     def _setup_model(self) -> None:
         """Create networks, buffer and optimizers."""
 
-    def set_logger(self, logger: Logger) -> None:
-        """Setter for for logger object.
+    def set_logger(self, logger: Any) -> None:
+        """Setter for the custom Lightning logger used by ``RLTrainer``.
 
         .. warning::
 
-          When passing a custom logger object,
-          this will overwrite ``tensorboard_log`` and ``verbose`` settings
-          passed to the constructor.
+                    When passing a custom logger object, this overrides the trainer-managed
+                    default logger. Use ``RLTrainer(default_root_dir=...)`` to control the
+                    default TensorBoard save path.
         """
-        self._logger = logger
-        # User defined logger
+        self._trainer_logger = logger
         self._custom_logger = True
 
-    @property
-    def logger(self) -> Logger:
-        """Getter for the logger object."""
-        return self._logger
+    def log_metrics(self, metrics: dict[str, Any], step: int | None = None) -> None:  # noqa: ARG002
+        """Log a metrics dict via LightningModule ``self.log()``."""
+        for key, value in metrics.items():
+            if isinstance(value, torch.Tensor):
+                value = value.detach().cpu().item() if value.numel() == 1 else value.detach().cpu()
+            elif isinstance(value, np.generic):
+                value = value.item()
+            self.log(key, value, on_step=True, on_epoch=False, prog_bar=False, logger=True)
+
+    def get_summary_writer(self) -> Any:
+        """Return the active TensorBoard SummaryWriter if one is configured."""
+        trainer = getattr(self, "_rl_trainer_ref", None)
+        if trainer is None:
+            try:
+                trainer = self.trainer
+            except RuntimeError:
+                trainer = None
+        if trainer is None:
+            return None
+
+        from lit_sb3.callbacks.summary_writer import SummaryWriterCallback
+
+        return SummaryWriterCallback.get_writer(trainer)
 
     def _setup_lr_schedule(self) -> None:
         """Transform to callable if needed."""
@@ -369,12 +413,11 @@ class BaseAlgorithm(LightningModule):
         return [
             "policy",
             "device",
-            "env",
             "replay_buffer",
             "rollout_buffer",
             "_vec_normalize_env",
-            "_logger",
             "_custom_logger",
+            "_trainer_logger",
         ]
 
     def _get_policy_from_name(self, policy_name: str) -> type[BasePolicy]:
@@ -416,7 +459,6 @@ class BaseAlgorithm(LightningModule):
     def _init_callback(
         self,
         callback: MaybeCallback,
-        progress_bar: bool = False,
     ) -> BaseCallback:
         """Args.
 
@@ -432,28 +474,21 @@ class BaseAlgorithm(LightningModule):
         if not isinstance(callback, BaseCallback):
             callback = ConvertCallback(callback)
 
-        # Add progress bar callback
-        if progress_bar:
-            callback = CallbackList([callback, ProgressBarCallback()])
-
         callback.init_callback(self)
         return callback
 
     def _setup_learn(
         self,
-        total_timesteps: int,
+        max_steps: int,
         callback: MaybeCallback = None,
-        reset_num_timesteps: bool = True,
-        tb_log_name: str = "run",
-        progress_bar: bool = False,
+        run_name: str = "run",
     ) -> tuple[int, BaseCallback]:
         """Initialize different variables needed for training.
 
         Args:
-            total_timesteps: The total number of samples (env steps) to train on
+            max_steps: The total number of samples (env steps) to train on
             callback: Callback(s) called at every step with state of the algorithm.
-            reset_num_timesteps: Whether to reset or not the ``num_timesteps`` attribute
-            tb_log_name: the name of the run for tensorboard log
+            run_name: The run name used in loggers.
             progress_bar: Display a progress bar using tqdm and rich.
 
         Returns:
@@ -461,7 +496,7 @@ class BaseAlgorithm(LightningModule):
         """
         self.start_time = time.time_ns()
 
-        if self.ep_info_buffer is None or reset_num_timesteps:
+        if self.ep_info_buffer is None:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters
             self.ep_info_buffer = deque(maxlen=self._stats_window_size)
             self.ep_success_buffer = deque(maxlen=self._stats_window_size)
@@ -469,32 +504,29 @@ class BaseAlgorithm(LightningModule):
         if self.action_noise is not None:
             self.action_noise.reset()
 
-        if reset_num_timesteps:
+        if True:
             self.num_timesteps = 0
             self._episode_num = 0
         else:
             # Make sure training timesteps are ahead of the internal counter
-            total_timesteps += self.num_timesteps
-        self._total_timesteps = total_timesteps
+            max_steps += self.num_timesteps
+        self._total_timesteps = max_steps
         self._num_timesteps_at_start = self.num_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
-        if reset_num_timesteps or self._last_obs is None:
-            assert self.env is not None
-            self._last_obs = self.env.reset()
-            self._last_episode_starts = np.ones((self.env.num_envs,), dtype=bool)
+        if True or self._last_obs is None:
+            env = self.env
+            assert env is not None
+            self._last_obs = env.reset()
+            self._last_episode_starts = np.ones((env.num_envs,), dtype=bool)
             # Retrieve unnormalized observation for saving into the buffer
             if self._vec_normalize_env is not None:
                 self._last_original_obs = self._vec_normalize_env.get_original_obs()
 
-        # Configure logger's outputs if no logger was passed
-        if not self._custom_logger:
-            self._logger = configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
-
         # Create eval callback if needed
-        callback = self._init_callback(callback, progress_bar)
+        callback = self._init_callback(callback)
 
-        return total_timesteps, callback
+        return max_steps, callback
 
     def _update_info_buffer(self, infos: list[dict[str, Any]], dones: np.ndarray | None = None) -> None:
         """Retrieve reward, episode length, episode success and update the buffer.
@@ -521,10 +553,40 @@ class BaseAlgorithm(LightningModule):
     def get_env(self) -> VecEnv | None:
         """Returns the current environment (can be None if not defined).
 
+        Resolves through the trainer if available, otherwise returns None.
+
         Returns:
             The current environment
         """
         return self.env
+
+    def _get_rl_trainer(self) -> Any | None:
+        """Return the active RLTrainer reference if one is attached."""
+        rl_trainer = getattr(self, "_rl_trainer_ref", None)
+        if rl_trainer is not None and hasattr(rl_trainer, "_rl_total_timesteps"):
+            return rl_trainer
+
+        try:
+            trainer = self.trainer
+            if trainer is not None and hasattr(trainer, "_rl_total_timesteps"):
+                return trainer
+        except RuntimeError:
+            pass
+        return None
+
+    def _sync_rl_trainer_timesteps(self) -> None:
+        """Mirror the latest env-step count into the attached RLTrainer."""
+        rl_trainer = self._get_rl_trainer()
+        if rl_trainer is not None and hasattr(rl_trainer, "_update_rl_timesteps"):
+            rl_trainer._update_rl_timesteps(self.num_timesteps)
+
+    def _has_reached_rl_budget(self) -> bool:
+        """Return whether the trainer-owned RL timestep budget has been reached."""
+        self._sync_rl_trainer_timesteps()
+        rl_trainer = self._get_rl_trainer()
+        if rl_trainer is not None and hasattr(rl_trainer, "rl_budget_reached"):
+            return bool(rl_trainer.rl_budget_reached)
+        return self.num_timesteps >= getattr(self, "_total_timesteps", self.num_timesteps + 1)
 
     def get_vec_normalize_env(self) -> VecNormalize | None:
         """Return the ``VecNormalize`` wrapper of the training env.
@@ -537,12 +599,9 @@ class BaseAlgorithm(LightningModule):
         return self._vec_normalize_env
 
     def set_env(self, env: GymEnv, force_reset: bool = True) -> None:
-        """Checks the validity of the environment, and if it is coherent, set it as the current environment.
+        """Validate and attach the environment to the trainer.
 
-        Furthermore wrap any non vectorized env into a vectorized
-        checked parameters:
-        - observation_space
-        - action_space.
+        The env is stored on the active RLTrainer, not on the model.
 
         Args:
             env: The environment for learning a policy
@@ -550,27 +609,32 @@ class BaseAlgorithm(LightningModule):
                 to avoid unexpected behavior.
                 See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         """
-        # if it is not a VecEnv, make it a VecEnv
-        # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
         assert env.num_envs == self.n_envs, (
             "The number of environments to be set is different from the number of environments in the model: "
             f"({env.num_envs} != {self.n_envs}), whereas `set_env` requires them to be the same. To load a model with "
             f"a different number of environments, you must use `{self.__class__.__name__}.load(path, env)` instead"
         )
-        # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
-        # Update VecNormalize object
-        # otherwise the wrong env may be used, see https://github.com/DLR-RM/stable-baselines3/issues/637
         self._vec_normalize_env = unwrap_vec_normalize(env)
 
-        # Discard `_last_obs`, this will force the env to reset before training
-        # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         if force_reset:
             self._last_obs = None
 
         self.n_envs = env.num_envs
-        self.env = env
+        # Store on trainer if available
+        rl_trainer = getattr(self, "_rl_trainer_ref", None)
+        if rl_trainer is not None and hasattr(rl_trainer, "_rl_env"):
+            rl_trainer._rl_env = env
+            return
+        try:
+            trainer = self.trainer
+            if trainer is not None and hasattr(trainer, "_rl_env"):
+                trainer._rl_env = env  # type: ignore[union-attr]
+                return
+        except RuntimeError:
+            pass
+        raise RuntimeError("Cannot set env: no RLTrainer is attached. Pass env via RLEnvDataModule.")
 
     # ------------------------------------------------------------------
     # RLTrainer protocol — implemented by OnPolicyAlgorithm / OffPolicyAlgorithm
@@ -603,7 +667,8 @@ class BaseAlgorithm(LightningModule):
         """Return the ``max_epochs`` value for ``L.Trainer``.
 
         On-policy: ``ceil(total_timesteps / (n_steps * n_envs))``.
-        Off-policy: ``1`` (single epoch driven by ``ReplayBufferDataset``).
+        Off-policy: ``1`` (single epoch driven by an unbounded replay driver and
+        trainer-owned RL budget checks).
 
         Args:
             total_timesteps: Effective total timesteps.
@@ -626,6 +691,7 @@ class BaseAlgorithm(LightningModule):
     def learn(
         self: SelfBaseAlgorithm,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = None,
         tb_log_name: str = "run",
@@ -641,6 +707,8 @@ class BaseAlgorithm(LightningModule):
         Args:
             total_timesteps: The total number of samples (env steps) to train on
                 Note: it is a lower bound, see `issue #1150 <https://github.com/DLR-RM/stable-baselines3/issues/1150>`_
+            env: Training environment or env-id string. Required by the SB3-compatible
+                ``learn()`` shim because environments are no longer stored on the model.
             callback: callback(s) called at every step with state of the algorithm.
             log_every_n_steps: How often to emit SB3 stats. For on-policy algos
                 (PPO, A2C, …) this is the number of rollout cycles; for off-policy
@@ -692,9 +760,9 @@ class BaseAlgorithm(LightningModule):
             return
         set_random_seed(seed, using_cuda=self.device.type == torch.device("cuda").type)
         self.action_space.seed(seed)
-        # self.env is always a VecEnv
-        if self.env is not None:
-            self.env.seed(seed)
+        env = self.env
+        if env is not None:
+            env.seed(seed)
 
     def set_parameters(
         self,
@@ -804,13 +872,15 @@ class BaseAlgorithm(LightningModule):
         Returns:
             new model instance with loaded parameters
         """
+        resolved_device = get_device(device)
+
         if print_system_info:
             print("== CURRENT SYSTEM INFO ==")
             get_system_info()
 
         data, params, pytorch_variables = load_from_zip_file(
             path,
-            device=device,
+            device=resolved_device,
             custom_objects=custom_objects,
             print_system_info=print_system_info,
         )
@@ -854,30 +924,40 @@ class BaseAlgorithm(LightningModule):
                 data["n_envs"] = env.num_envs
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
-            if "env" in data:
-                env = data["env"]
+            if "_init_env" in data:
+                env = data.pop("_init_env", None)
+            elif "env" in data:
+                env = data.pop("env", None)
 
         model = cls(
             policy=data["policy_class"],
-            env=env,
-            device=device,
+            device=resolved_device,
             _init_setup_model=False,  # type: ignore[call-arg]
         )  # ty:ignore[missing-argument]
 
         # load parameters
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
+
+        # If an env was provided or stored, extract metadata
+        if env is not None:
+            if not isinstance(env, VecEnv):
+                env = cls._wrap_env(env, data.get("verbose", 0))
+            model._init_env_metadata(env, model._supported_action_spaces, model._support_multi_env)
+
+        model.__dict__["_setup_device_override"] = resolved_device
         model._setup_model()
+        delattr(model, "_setup_device_override")
 
         try:
             # put state_dicts back in place
-            model.set_parameters(params, exact_match=True, device=device)
+            model.set_parameters(params, exact_match=True, device=resolved_device)
         except RuntimeError as e:
             # Patch to load policies saved using SB3 < 1.7.0
             # the error is probably due to old policy being loaded
             # See https://github.com/DLR-RM/stable-baselines3/issues/1233
             if "pi_features_extractor" in str(e) and "Missing key(s) in state_dict" in str(e):
-                model.set_parameters(params, exact_match=False, device=device)
+                model.set_parameters(params, exact_match=False, device=resolved_device)
                 warnings.warn(
                     "You are probably loading a A2C/PPO model saved with SB3 < 1.7.0, "
                     "we deactivated exact_match so you can save the model "
@@ -900,7 +980,7 @@ class BaseAlgorithm(LightningModule):
                 # Truncate to include only online network params
                 params["policy.optimizer"]["param_groups"][0]["params"] = saved_optim_params[:n_params]  # type: ignore[index]
 
-                model.set_parameters(params, exact_match=True, device=device)
+                model.set_parameters(params, exact_match=True, device=resolved_device)
                 warnings.warn(
                     "You are probably loading a DQN model saved with SB3 < 2.4.0, "
                     "we truncated the optimizer state so you can save the model "

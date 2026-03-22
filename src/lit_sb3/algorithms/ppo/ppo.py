@@ -84,7 +84,6 @@ class PPO(OnPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[ActorCriticPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 3e-4,
         n_steps: int = 2048,
         batch_size: int = 64,
@@ -103,7 +102,6 @@ class PPO(OnPolicyAlgorithm):
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         target_kl: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -112,7 +110,6 @@ class PPO(OnPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate=learning_rate,
             n_steps=n_steps,
             gamma=gamma,
@@ -125,7 +122,6 @@ class PPO(OnPolicyAlgorithm):
             rollout_buffer_class=rollout_buffer_class,
             rollout_buffer_kwargs=rollout_buffer_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             device=device,
@@ -146,12 +142,12 @@ class PPO(OnPolicyAlgorithm):
                 "`batch_size` must be greater than 1. See https://github.com/DLR-RM/stable-baselines3/issues/440"
             )
 
-        if self.env is not None:
+        if hasattr(self, "n_envs"):
             # Check that `n_steps * n_envs > 1` to avoid NaN
             # when doing advantage normalization
-            buffer_size = self.env.num_envs * self.n_steps
+            buffer_size = self.n_envs * self.n_steps
             assert buffer_size > 1 or (not normalize_advantage), (
-                f"`n_steps * n_envs` must be greater than 1. Currently n_steps={self.n_steps} and n_envs={self.env.num_envs}"
+                f"`n_steps * n_envs` must be greater than 1. Currently n_steps={self.n_steps} and n_envs={self.n_envs}"
             )
             # Check that the rollout buffer size is a multiple of the mini-batch size
             untruncated_batches = buffer_size // batch_size
@@ -162,7 +158,7 @@ class PPO(OnPolicyAlgorithm):
                     f" after every {untruncated_batches} untruncated mini-batches,"
                     f" there will be a truncated mini-batch of size {buffer_size % batch_size}\n"
                     f"We recommend using a `batch_size` that is a factor of `n_steps * n_envs`.\n"
-                    f"Info: (n_steps={self.n_steps} and n_envs={self.env.num_envs})",
+                    f"Info: (n_steps={self.n_steps} and n_envs={self.n_envs})",
                     stacklevel=2,
                 )
         self.batch_size = batch_size
@@ -175,7 +171,7 @@ class PPO(OnPolicyAlgorithm):
         self._rl_batch_size = batch_size
         self._rl_n_epochs = n_epochs
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -288,17 +284,21 @@ class PPO(OnPolicyAlgorithm):
     def learn(
         self: SelfPPO,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 1,
         tb_log_name: str = "PPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        default_root_dir: str | Path | None = None,
     ) -> SelfPPO:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            default_root_dir=default_root_dir,
         )

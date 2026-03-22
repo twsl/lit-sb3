@@ -80,7 +80,6 @@ class CrossQ(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[CrossQPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 1e-3,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
@@ -100,7 +99,6 @@ class CrossQ(OffPolicyAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -109,7 +107,6 @@ class CrossQ(OffPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,
-            env,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -125,7 +122,6 @@ class CrossQ(OffPolicyAlgorithm):
             n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
@@ -144,7 +140,7 @@ class CrossQ(OffPolicyAlgorithm):
         self.ent_coef_optimizer: torch.optim.Adam | None = None
         self.policy_delay = policy_delay
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -153,7 +149,7 @@ class CrossQ(OffPolicyAlgorithm):
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == "auto":
             # automatically set target entropy if needed
-            self.target_entropy = float(-np.prod(self.env.action_space.shape).astype(np.float32))  # type: ignore[union-attr]
+            self.target_entropy = float(-np.prod(self.action_space.shape).astype(np.float32))  # type: ignore[union-attr]
         else:
             # Force conversion
             # this will also throw an error for unexpected string
@@ -315,6 +311,7 @@ class CrossQ(OffPolicyAlgorithm):
     def learn(
         self: SelfCrossQ,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 4,
         tb_log_name: str = "CrossQ",
@@ -323,6 +320,7 @@ class CrossQ(OffPolicyAlgorithm):
     ) -> SelfCrossQ:
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,

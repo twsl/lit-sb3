@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import lightning as L  # noqa: N812
 
-from lit_sb3.utils.logger import Logger
 from lit_sb3.vec_env import VecEnv
 
 if TYPE_CHECKING:
@@ -55,8 +54,8 @@ class BaseCallback(L.Callback, ABC):
         return training_env
 
     @property
-    def logger(self) -> Logger:
-        return self.model.logger
+    def summary_writer(self) -> Any:
+        return self.model.get_summary_writer()
 
     # Type hint as string to avoid circular import
     def init_callback(self, model: "BaseAlgorithm") -> None:
@@ -65,6 +64,8 @@ class BaseCallback(L.Callback, ABC):
         RL model and the training environment for convenience.
         """
         self.model = model
+        self._training_started = False
+        self._training_ended = False
         self._init_callback()
 
     def _init_callback(self) -> None:  # noqa: B027
@@ -72,6 +73,7 @@ class BaseCallback(L.Callback, ABC):
 
     def on_training_start(self, locals_: dict[str, Any], globals_: dict[str, Any]) -> None:
         self._training_started = True
+        self._training_ended = False
         # Those are reference and will be updated automatically
         self.locals = locals_
         self.globals = globals_

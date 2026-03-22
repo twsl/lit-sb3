@@ -19,16 +19,17 @@ from pathlib import Path
 from pprint import pformat
 import shutil
 import tempfile
-from typing import Any
+from typing import TYPE_CHECKING, Any
 import zipfile
 
 import numpy as np
 import yaml
 
 from lit_sb3.__about__ import __version__
-from lit_sb3.core.evaluation import evaluate_policy
 from lit_sb3.huggingface.naming_schemes import EnvironmentName, ModelName, ModelRepoId
-from lit_sb3.vec_env import DummyVecEnv, VecEnv, VecVideoRecorder, unwrap_vec_normalize
+
+if TYPE_CHECKING:
+    from lit_sb3.vec_env import VecEnv
 
 try:
     from huggingface_hub import HfApi, ModelCard, ModelCardData
@@ -113,6 +114,8 @@ def _evaluate_agent(
     Returns:
         ``(mean_reward, std_reward)`` tuple.
     """
+    from lit_sb3.core.evaluation import evaluate_policy
+
     mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes, is_deterministic)
 
     evaluate_data: dict[str, Any] = {
@@ -146,6 +149,8 @@ def _generate_replay(
         is_deterministic: Use deterministic actions.
         local_path: Output directory for ``replay.mp4``.
     """
+    from lit_sb3.vec_env import VecVideoRecorder
+
     with tempfile.TemporaryDirectory() as tmpdirname:
         env = VecVideoRecorder(
             eval_env,
@@ -378,6 +383,8 @@ def package_to_hub(
     # Step 1: Save the model
     print("Saving model to:", repo_local_path / str(model_name))
     model.save(repo_local_path / str(model_name))
+
+    from lit_sb3.vec_env import unwrap_vec_normalize
 
     maybe_vec_normalize = unwrap_vec_normalize(eval_env)
     if maybe_vec_normalize is not None:

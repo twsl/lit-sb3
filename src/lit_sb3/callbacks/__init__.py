@@ -9,6 +9,7 @@ from lit_sb3.callbacks.stop import (
     StopTrainingOnNoModelImprovement,
     StopTrainingOnRewardThreshold,
 )
+from lit_sb3.callbacks.summary_writer import SummaryWriterCallback
 from lit_sb3.callbacks.timing import EveryNTimesteps, LogEveryNTimesteps
 from lit_sb3.callbacks.trial_eval import TrialEvalCallback
 from lit_sb3.callbacks.vec_normalize import SaveVecNormalizeCallback
@@ -28,5 +29,6 @@ __all__ = [
     "StopTrainingOnMaxEpisodes",
     "StopTrainingOnNoModelImprovement",
     "StopTrainingOnRewardThreshold",
+    "SummaryWriterCallback",
     "TrialEvalCallback",
 ]

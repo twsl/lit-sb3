@@ -7,12 +7,10 @@ and the methods are safe to migrate to an Agent class in Phase 3.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import torch
-
-from lit_sb3.algorithms.ppo.ppo import PPO
 
 
 def _make_rollout_batch(
@@ -33,33 +31,6 @@ def _make_rollout_batch(
     batch.returns = torch.randn(batch_size)
     batch.advantages = torch.randn(batch_size)
     return batch
-
-
-def _make_ppo(obs_dim: int = 4, n_actions: int = 2) -> PPO:  # noqa: F821
-
-    with patch("gymnasium.make") as mock_make:
-        mock_env = MagicMock()
-        mock_env.observation_space.shape = (obs_dim,)
-        mock_env.action_space.n = n_actions
-        mock_env.action_space.shape = ()
-        mock_env.spec = None
-        mock_make.return_value = mock_env
-        model = PPO("MlpPolicy", mock_env, n_steps=16, batch_size=8, n_epochs=1)
-    return model
-
-
-def _make_a2c(obs_dim: int = 4, n_actions: int = 2) -> A2C:  # noqa: F821
-    from lit_sb3.algorithms.a2c import A2C
-
-    with patch("gymnasium.make") as mock_make:
-        mock_env = MagicMock()
-        mock_env.observation_space.shape = (obs_dim,)
-        mock_env.action_space.n = n_actions
-        mock_env.action_space.shape = ()
-        mock_env.spec = None
-        mock_make.return_value = mock_env
-        model = A2C("MlpPolicy", mock_env, n_steps=16)
-    return model
 
 
 class TestPPOComputeLoss:
@@ -83,7 +54,6 @@ class TestPPOComputeLoss:
 
     def test_no_env_required(self, simple_ppo):
         """_compute_loss must not access self.env."""
-        simple_ppo.env = None
         batch = _make_rollout_batch()
         # Should not raise — env is not touched
         losses = simple_ppo._compute_loss(batch)
@@ -115,7 +85,6 @@ class TestA2CComputeLoss:
         assert losses["loss"].shape == torch.Size([])
 
     def test_no_env_required(self, simple_a2c):
-        simple_a2c.env = None
         batch = _make_rollout_batch()
         losses = simple_a2c._compute_loss(batch)
         assert "loss" in losses
@@ -142,14 +111,16 @@ def simple_ppo():
     env.num_envs = 1
     env.spec = None
 
+    import lightning as L
+
     from lit_sb3.algorithms.ppo import PPO
 
     model = PPO.__new__(PPO)
+    L.LightningModule.__init__(model)
     # Minimal init to get a policy without gym env setup
     model.observation_space = obs_space
     model.action_space = act_space
     model.n_envs = 1
-    model.device = torch.device("cpu")
     model.verbose = 0
     model.normalize_advantage = True
     model.clip_range = lambda _: 0.2
@@ -159,7 +130,6 @@ def simple_ppo():
     model.vf_coef = 0.5
     model._current_progress_remaining = 1.0
     model._n_updates = 0
-    model.env = None
 
     from lit_sb3.policies import ActorCriticPolicy
     from lit_sb3.utils.schedule import FloatSchedule
@@ -181,20 +151,21 @@ def simple_a2c():
     obs_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
     act_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
+    import lightning as L
+
     from lit_sb3.algorithms.a2c import A2C
 
     model = A2C.__new__(A2C)
+    L.LightningModule.__init__(model)
     model.observation_space = obs_space
     model.action_space = act_space
     model.n_envs = 1
-    model.device = torch.device("cpu")
     model.verbose = 0
     model.normalize_advantage = False
     model.ent_coef = 0.0
     model.vf_coef = 0.5
     model._current_progress_remaining = 1.0
     model._n_updates = 0
-    model.env = None
 
     from lit_sb3.policies import ActorCriticPolicy
     from lit_sb3.utils.schedule import FloatSchedule

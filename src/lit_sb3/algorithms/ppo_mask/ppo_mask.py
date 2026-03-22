@@ -80,7 +80,6 @@ class MaskablePPO(OnPolicyAlgorithm):
     def __init__(
         self,
         policy: str | type[MaskableActorCriticPolicy],
-        env: GymEnv | str,
         learning_rate: float | Schedule = 3e-4,
         n_steps: int = 2048,
         batch_size: int | None = 64,
@@ -97,7 +96,6 @@ class MaskablePPO(OnPolicyAlgorithm):
         rollout_buffer_kwargs: dict[str, Any] | None = None,
         target_kl: float | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | Path | None = None,
         policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
         seed: int | None = None,
@@ -106,7 +104,6 @@ class MaskablePPO(OnPolicyAlgorithm):
     ) -> None:
         super().__init__(
             policy,  # type: ignore[arg-type]
-            env,
             learning_rate=learning_rate,
             n_steps=n_steps,
             gamma=gamma,
@@ -119,7 +116,6 @@ class MaskablePPO(OnPolicyAlgorithm):
             rollout_buffer_class=rollout_buffer_class,
             rollout_buffer_kwargs=rollout_buffer_kwargs,
             stats_window_size=stats_window_size,
-            tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             seed=seed,
@@ -142,7 +138,7 @@ class MaskablePPO(OnPolicyAlgorithm):
         self._rl_batch_size = batch_size
         self._rl_n_epochs = n_epochs
 
-        if _init_setup_model:
+        if _init_setup_model and hasattr(self, "observation_space"):
             self._setup_model()
 
     def _setup_model(self) -> None:
@@ -421,6 +417,7 @@ class MaskablePPO(OnPolicyAlgorithm):
     def learn(  # type: ignore[override]
         self: SelfMaskablePPO,
         total_timesteps: int,
+        env: GymEnv | str | None = None,
         callback: MaybeCallback = None,
         log_every_n_steps: int | None = 1,
         tb_log_name: str = "MaskablePPO",
@@ -432,6 +429,7 @@ class MaskablePPO(OnPolicyAlgorithm):
         # Default is True; MaskablePPO.collect_rollouts also defaults to use_masking=True.
         return super().learn(
             total_timesteps=total_timesteps,
+            env=env,
             callback=callback,
             log_every_n_steps=log_every_n_steps,
             tb_log_name=tb_log_name,
