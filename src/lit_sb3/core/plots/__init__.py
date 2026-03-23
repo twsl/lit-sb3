@@ -1,4 +1,4 @@
-"""Zoo plots — re-export plot functions from core/cli.
+"""Core plotting helpers — re-export plot functions from core/cli.
 
 Adapted from
 https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/__init__.py

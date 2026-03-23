@@ -290,8 +290,8 @@ def _add_train_args(parser: argparse.ArgumentParser) -> None:
 
 def run_train(args: argparse.Namespace) -> None:  # noqa: C901
     """Execute the train command with pre-parsed args."""
-    from lit_sb3.zoo.exp_manager import ExperimentManager
-    import lit_sb3.zoo.import_envs  # noqa: F401
+    from lit_sb3.core.exp_manager import ExperimentManager
+    import lit_sb3.core.import_envs  # noqa: F401
 
     # Going through custom gym packages to let them register in the global registry
     for env_module in args.gym_packages:

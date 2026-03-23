@@ -31,7 +31,7 @@ except ImportError:
     rly = None
 
 try:
-    from lit_sb3.zoo.plots.score_normalization import normalize_score
+    from lit_sb3.core.plots.score_normalization import normalize_score
 
     _SCORE_NORM_AVAILABLE = True
 except ImportError:
@@ -39,7 +39,9 @@ except ImportError:
 
 
 # From https://github.com/mwaskom/seaborn/blob/master/seaborn/categorical.py
-def restyle_boxplot(artist_dict: dict[str, Any], color: Any, gray: str = "#222222", linewidth: float = 1, fliersize: float = 5) -> None:
+def restyle_boxplot(
+    artist_dict: dict[str, Any], color: Any, gray: str = "#222222", linewidth: float = 1, fliersize: float = 5
+) -> None:
     """Style a matplotlib boxplot to look nicer."""
     for box in artist_dict["boxes"]:
         box.update({"facecolor": color, "zorder": 0.9, "edgecolor": gray, "linewidth": linewidth})

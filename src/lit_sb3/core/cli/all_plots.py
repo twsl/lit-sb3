@@ -37,7 +37,7 @@ except ImportError:
     rly = None
 
 try:
-    from lit_sb3.zoo.plots.score_normalization import normalize_score
+    from lit_sb3.core.plots.score_normalization import normalize_score
 
     _SCORE_NORM_AVAILABLE = True
 except ImportError:

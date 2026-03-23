@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 import yaml
 
+from lit_sb3.core.exp_manager import ExperimentManager
 from lit_sb3.huggingface.naming_schemes import EnvironmentName
 from lit_sb3.utils.cli import StoreDict
 from lit_sb3.utils.env import create_test_env
@@ -18,7 +19,6 @@ from lit_sb3.utils.model import get_model_path, get_saved_hyperparams
 from lit_sb3.utils.registry import ALGOS
 from lit_sb3.utils.training import set_random_seed
 from lit_sb3.vec_env import VecVideoRecorder
-from lit_sb3.zoo.exp_manager import ExperimentManager
 
 
 def _add_record_video_args(parser: argparse.ArgumentParser) -> None:
@@ -85,7 +85,7 @@ def _add_record_video_args(parser: argparse.ArgumentParser) -> None:
 
 def run_record_video(args: argparse.Namespace) -> None:  # noqa: C901
     """Execute record-video from a parsed :class:`argparse.Namespace`."""
-    import lit_sb3.zoo.import_envs  # noqa: F401
+    import lit_sb3.core.import_envs  # noqa: F401
 
     env_name: EnvironmentName = EnvironmentName(args.env)
     algo = args.algo

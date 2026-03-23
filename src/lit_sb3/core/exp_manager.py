@@ -68,7 +68,7 @@ except ImportError:
 
 # Hyperparameter optimisation samplers (also needs optuna)
 try:
-    from lit_sb3.zoo.hyperparams_opt import HYPERPARAMS_CONVERTER, HYPERPARAMS_SAMPLER
+    from lit_sb3.core.hyperparams_opt import HYPERPARAMS_CONVERTER, HYPERPARAMS_SAMPLER
 
     _HYPERPARAMS_OPT_AVAILABLE = True
 except ImportError:
@@ -825,7 +825,7 @@ class ExperimentManager:
     def objective(self, trial: Any) -> float:
         """Optuna objective function for one trial."""
         if not _OPTUNA_AVAILABLE or not _HYPERPARAMS_OPT_AVAILABLE:
-            raise ImportError("optuna and lit_sb3.zoo.hyperparams_opt are required for hyperparameter optimisation.")
+            raise ImportError("optuna and lit_sb3.core.hyperparams_opt are required for hyperparameter optimisation.")
 
         kwargs = self._hyperparams.copy()
         n_envs = 1 if self.algo == "ars" else self.n_envs
@@ -1055,7 +1055,7 @@ class ExperimentManager:
     def objective(self, trial: Any) -> float:  # noqa: F811
         """Optuna objective function for one trial."""
         if not _OPTUNA_AVAILABLE or not _HYPERPARAMS_OPT_AVAILABLE:
-            raise ImportError("optuna and lit_sb3.zoo.hyperparams_opt are required for hyperparameter optimisation.")
+            raise ImportError("optuna and lit_sb3.core.hyperparams_opt are required for hyperparameter optimisation.")
 
         kwargs = self._hyperparams.copy()
         n_envs = 1 if self.algo == "ars" else self.n_envs

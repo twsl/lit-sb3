@@ -10,9 +10,9 @@ import subprocess
 
 import numpy as np
 
+import lit_sb3.core.import_envs  # noqa: F401
 from lit_sb3.utils.model import get_saved_hyperparams, get_trained_models
 from lit_sb3.utils.system import get_latest_run_id
-import lit_sb3.zoo.import_envs  # noqa: F401
 
 try:
     import pandas as pd

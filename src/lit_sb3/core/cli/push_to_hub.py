@@ -77,10 +77,10 @@ def _add_push_to_hub_args(parser: argparse.ArgumentParser) -> None:
 
 def run_push_to_hub(args: argparse.Namespace) -> None:
     """Execute the push-to-hub command with pre-parsed args."""
+    from lit_sb3.core.exp_manager import ExperimentManager
+    import lit_sb3.core.import_envs  # noqa: F401
     from lit_sb3.huggingface.naming_schemes import EnvironmentName, ModelName, ModelRepoId
     from lit_sb3.huggingface.push_to_hub import package_to_hub
-    from lit_sb3.zoo.exp_manager import ExperimentManager
-    import lit_sb3.zoo.import_envs  # noqa: F401
 
     env_name: EnvironmentName = EnvironmentName(args.env)
     algo = args.algo

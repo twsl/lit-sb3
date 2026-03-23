@@ -4,7 +4,7 @@ Adapted from
 https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/import_envs.py
 
 Optional environment packages are imported with graceful fallback so that
-missing packages do not break the rest of the zoo.
+missing packages do not break the rest of the package.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Optional
 import gymnasium as gym
 from gymnasium.envs.registration import register
 
-from lit_sb3.zoo.wrappers import MaskVelocityWrapper
+from lit_sb3.wrappers import MaskVelocityWrapper
 
 with contextlib.suppress(ImportError):
     import pybullet_envs_gymnasium  # noqa: F401  # ty:ignore[unresolved-import]

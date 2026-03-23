@@ -17,7 +17,7 @@ def get_saved_hyperparams(
     norm_reward: bool = False,
     test_mode: bool = False,
 ) -> tuple[dict[str, Any], str | Path | None]:
-    """Load hyperparameters saved by :class:`~lit_sb3.zoo.exp_manager.ExperimentManager`.
+    """Load hyperparameters saved by :class:`~lit_sb3.core.exp_manager.ExperimentManager`.
 
     Args:
         stats_path: Path to the folder containing ``config.yml``.
