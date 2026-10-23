@@ -155,6 +155,33 @@ def test_device_buffer(replay_buffer_cls, device):
                 assert value.device.type == desired_device
 
 
+def test_get_device_auto_prefers_cuda(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(th.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(th.backends.mps, "is_available", lambda: True)
+
+    assert get_device("auto").type == "cuda"
+
+
+def test_get_device_auto_uses_mps_when_cuda_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(th.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(th.backends.mps, "is_available", lambda: True)
+
+    assert get_device("auto").type == "mps"
+
+
+def test_get_device_auto_falls_back_to_cpu(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(th.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(th.backends.mps, "is_available", lambda: False)
+
+    assert get_device("auto").type == "cpu"
+
+
+def test_get_device_unavailable_mps_falls_back_to_cpu(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(th.backends.mps, "is_available", lambda: False)
+
+    assert get_device("mps").type == "cpu"
+
+
 @pytest.mark.parametrize(
     "obs_dtype",
     [
