@@ -418,6 +418,7 @@ class BaseAlgorithm(LightningModule):
             "_vec_normalize_env",
             "_custom_logger",
             "_trainer_logger",
+            "_rl_trainer_ref",
         ]
 
     def _get_policy_from_name(self, policy_name: str) -> type[BasePolicy]:
