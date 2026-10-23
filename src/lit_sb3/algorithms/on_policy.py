@@ -369,6 +369,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self.rollout_buffer,
             n_rollout_steps=self.n_steps,
         )
+        self.policy.set_training_mode(True)
         self._skip_next_collection = True  # on_train_epoch_start skips for epoch 1
 
     # ------------------------------------------------------------------
