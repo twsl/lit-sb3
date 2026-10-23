@@ -49,6 +49,27 @@ def test_ppo_predict(tmp_path: Path) -> None:
     assert action is not None
 
 
+def test_ppo_save_load_preserves_deterministic_prediction(tmp_path: Path) -> None:
+    """A saved PPO model should reload with identical deterministic actions."""
+    from lit_sb3.algorithms.ppo.ppo import PPO
+
+    model = PPO("MlpPolicy", n_steps=64, batch_size=32, n_epochs=2, verbose=0)
+    _learn_with_tmpdir(model, total_timesteps=512, env="CartPole-v1", tmp_path=tmp_path)
+
+    env = model.get_env()
+    assert env is not None
+    obs = env.reset()
+    path = tmp_path / "ppo-checkpoint.zip"
+    model.save(path)
+    restored = PPO.load(path)
+
+    expected_action, _ = model.predict(obs, deterministic=True)
+    restored_action, _ = restored.predict(obs, deterministic=True)
+
+    assert np.array_equal(restored_action, expected_action)
+    assert restored.num_timesteps == model.num_timesteps
+
+
 def test_ppo_cartpole_with_rltrainer(tmp_path: Path) -> None:
     """PPO should train and evaluate through RLTrainer using RLEnvDataModule stage envs."""
     from lit_sb3 import RLEnvDataModule, RLTrainer

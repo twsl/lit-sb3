@@ -229,6 +229,51 @@ class StepEnv(gym.Env):
         return np.array([prev_step], dtype="int64"), 0.0, False, done, {}
 
 
+class VecEnvContractEnv(gym.Env):
+    """Small deterministic environment for SB3 VecEnv contract checks."""
+
+    metadata = {"render_modes": []}
+
+    def __init__(self, end_kind: str) -> None:
+        self.action_space = gym.spaces.Discrete(2)
+        self.observation_space = gym.spaces.Box(np.array([0]), np.array([1]), dtype=np.int64)
+        self.end_kind = end_kind
+        self.reset_count = 0
+
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[np.ndarray, dict[str, int]]:
+        self.reset_count += 1
+        return np.array([0], dtype=np.int64), {"reset_count": self.reset_count}
+
+    def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict[str, object]]:
+        terminated = self.end_kind == "terminated"
+        truncated = self.end_kind == "truncated"
+        return np.array([1], dtype=np.int64), 1.0, terminated, truncated, {}
+
+
+@pytest.mark.parametrize("vec_env_cls", VEC_ENV_CLASSES)
+@pytest.mark.parametrize("end_kind", ["terminated", "truncated"])
+def test_vec_env_sb3_step_contract(vec_env_cls, end_kind):
+    """VecEnv implementations should preserve SB3 reset and episode-ending semantics."""
+    vec_env = vec_env_cls([functools.partial(VecEnvContractEnv, end_kind)])
+
+    try:
+        initial_obs = vec_env.reset()
+        assert isinstance(initial_obs, np.ndarray)
+        assert initial_obs.tolist() == [[0]]
+        assert vec_env.reset_infos == [{"reset_count": 1}]
+
+        obs, rewards, dones, infos = vec_env.step(np.array([0]))
+
+        assert obs.tolist() == [[0]]
+        assert rewards.tolist() == [1.0]
+        assert dones.tolist() == [True]
+        assert infos[0]["terminal_observation"].tolist() == [1]
+        assert infos[0]["TimeLimit.truncated"] is (end_kind == "truncated")
+        assert vec_env.reset_infos == [{"reset_count": 2}]
+    finally:
+        vec_env.close()
+
+
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 @pytest.mark.parametrize("vec_env_wrapper", VEC_ENV_WRAPPERS)
 def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
