@@ -2,9 +2,8 @@
 
 [![Build](https://github.com/twsl/lit-sb3/actions/workflows/build.yaml/badge.svg)](https://github.com/twsl/lit-sb3/actions/workflows/build.yaml)
 [![Documentation](https://github.com/twsl/lit-sb3/actions/workflows/docs.yaml/badge.svg)](https://github.com/twsl/lit-sb3/actions/workflows/docs.yaml)
-
-<!--- [![PyPI - Package Version](https://img.shields.io/pypi/v/lit-sb3?logo=pypi&style=flat&color=orange)](https://pypi.org/project/lit-sb3/) -->
-<!--- [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/lit-sb3?logo=pypi&style=flat&color=blue)](https://pypi.org/project/lit-sb3/) -->
+[![PyPI - Package Version](https://img.shields.io/pypi/v/lit-sb3?logo=pypi&style=flat&color=orange)](https://pypi.org/project/lit-sb3/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/lit-sb3?logo=pypi&style=flat&color=blue)](https://pypi.org/project/lit-sb3/)
 
 [![Docs with MkDocs](https://img.shields.io/badge/MkDocs-docs?style=flat&logo=materialformkdocs&logoColor=white&color=%23526CFE)](https://squidfunk.github.io/mkdocs-material/)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
