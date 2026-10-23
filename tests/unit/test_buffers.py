@@ -209,7 +209,7 @@ def test_get_device_unavailable_mps_falls_back_to_cpu(monkeypatch: pytest.Monkey
 )
 def test_buffer_dtypes(obs_dtype, use_dict, action_space):
     obs_space = spaces.Box(0, 100, dtype=obs_dtype)
-    buffer_params = {"buffer_size": 1, "action_space": action_space}
+    buffer_params = {"buffer_size": 1, "action_space": action_space, "device": "cpu"}
     actual_replay_action_dtype = ReplayBuffer._maybe_cast_dtype(action_space.dtype)
     # For on-policy, float32 for backward compat
     actual_rollout_action_dtype = np.float32
