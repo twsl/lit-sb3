@@ -29,9 +29,10 @@ class CustomGymEnv(gym.Env):
 
     metadata = {"render_modes": ["rgb_array"]}
 
-    def __init__(self, space):
+    def __init__(self, space, render_mode=None):
         self.action_space = space
         self.observation_space = space
+        self.render_mode = render_mode
         self.current_step = 0
         self.ep_length = 4
 
@@ -150,7 +151,7 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     """Test access to methods/attributes of vectorized environments."""
 
     def make_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)), render_mode="rgb_array")
 
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
 
