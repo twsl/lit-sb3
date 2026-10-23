@@ -124,7 +124,7 @@ class SubprocVecEnv(VecEnv):
         for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns, strict=False):
             args = (work_remote, remote, CloudpickleWrapper(env_fn))
             # daemon=True: if the main process crashes, we should not cause things to hang
-            process = ctx.Process(target=_worker, args=args, daemon=True)  # type: ignore[attr-defined]
+            process = ctx.Process(target=_worker, args=args, daemon=True)  # ty: ignore[unresolved-attribute]
             process.start()
             self.processes.append(process)
             work_remote.close()
@@ -147,14 +147,16 @@ class SubprocVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        obs, rews, dones, infos, self.reset_infos = zip(*results, strict=False)
-        return _stack_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
+        obs, rews, dones, infos, reset_infos = zip(*results, strict=False)
+        self.reset_infos = list(reset_infos)
+        return _stack_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos  # ty: ignore[invalid-return-type]
 
     def reset(self) -> VecEnvObs:
         for env_idx, remote in enumerate(self.remotes):
             remote.send(("reset", (self._seeds[env_idx], self._options[env_idx])))
         results = [remote.recv() for remote in self.remotes]
-        obs, self.reset_infos = zip(*results, strict=False)
+        obs, reset_infos = zip(*results, strict=False)
+        self.reset_infos = list(reset_infos)
         # Seeds and options are only used once
         self._reset_seeds()
         self._reset_options()
