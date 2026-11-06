@@ -25,20 +25,20 @@ dependencies = [
     "numpy>=2.5.4",
     "rich>=15.0.0",
     "tensorboard>=2.21.0",
-    "torch>=2.14.0",
+    "torch>=2.15.0",
     "torchmetrics>=1.9.0",
 ]
 
 [project.optional-dependencies]
 hub = [
-    "huggingface-hub>=2.2.0",
+    "huggingface-hub>=2.4.0",
 ]
 opt = [
     "optuna>=5.0.0",
 ]
 viz = [
     "matplotlib>=3.11.2",
-    "pandas>=3.1.0",
+    "pandas>=3.1.1",
 ]
 atari = ["gymnasium[atari]>=1.4.0"]
 box2d = ["gymnasium[box2d]>=1.4.0; platform_machine != 'aarch64' or sys_platform != 'linux'"]

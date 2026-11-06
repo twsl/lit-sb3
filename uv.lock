@@ -6,10 +6,10 @@ resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
@@ -2027,15 +2027,15 @@ requires-dist = [
     { name = "gymnasium", extras = ["classic-control"], marker = "extra == 'classic-control'", specifier = ">=1.4.0" },
     { name = "gymnasium", extras = ["mujoco"], marker = "extra == 'mujoco'", specifier = ">=1.4.0" },
     { name = "gymnasium", extras = ["toy-text"], marker = "extra == 'toy-text'", specifier = ">=1.4.0" },
-    { name = "huggingface-hub", marker = "extra == 'hub'", specifier = ">=2.2.0" },
+    { name = "huggingface-hub", marker = "extra == 'hub'", specifier = ">=2.4.0" },
     { name = "lightning", specifier = ">=2.6.6" },
     { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.11.2" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "optuna", marker = "extra == 'opt'", specifier = ">=5.0.0" },
-    { name = "pandas", marker = "extra == 'viz'", specifier = ">=3.1.0" },
+    { name = "pandas", marker = "extra == 'viz'", specifier = ">=3.1.1" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "tensorboard", specifier = ">=2.21.0" },
-    { name = "torch", specifier = ">=2.14.0" },
+    { name = "torch", specifier = ">=2.15.0" },
     { name = "torchmetrics", specifier = ">=1.9.0" },
 ]
 provides-extras = ["atari", "box2d", "classic-control", "hub", "mujoco", "opt", "toy-text", "viz"]
